@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <title>بيوتي بوك – حجوزات الصالون</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <!-- Swiper (Slider) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.js"></script>
+
+  <style>
+    :root{
+      --brand:#8b5cf6;
+      --brand-2:#ec4899;
+      --ink:#0f172a;
+      --card:#ffffffcc;
+      --bg-grad: linear-gradient(135deg,#faf5ff 0%, #fff7ed 100%);
+    }
+    body{ font-family:'Cairo',sans-serif; background:var(--bg-grad); color:var(--ink) }
+    .container-narrow{ max-width:1120px; margin:0 auto; }
+    .glass{ background:var(--card); backdrop-filter: blur(10px); }
+    .tab-btn{ transition:.2s }
+    .tab-content{ animation:fade .2s ease }
+    @keyframes fade{ from{opacity:.6;transform:translateY(6px)} to{opacity:1;transform:none} }
+
+    .auth-hero{
+      background: radial-gradient(1200px 600px at 90% -10%, rgba(139,92,246,.35), rgba(236,72,153,.25), transparent),
+                  linear-gradient(135deg,#ede9fe 0%, #fff1f2 100%);
+    }
+    .input-pad{ padding-inline-start:.75rem; padding-inline-end:.75rem; }
+    .social a{ transition: .15s; }
+    .social a:hover{ opacity:.85; transform: translateY(-1px); }
+  </style>
+</head>
+<body class="min-h-screen">
+
+  <!-- Toasts -->
+  <div id="notifications" class="fixed top-4 left-4 z-50 space-y-3"></div>
+
+  <!-- ================= شاشة تسجيل الدخول (ظاهرة افتراضيًا لمنع الصفحة البيضاء) ================= -->
+  <section id="loginScreen" class="min-h-screen grid place-items-center p-6">
+    <div class="w-full max-w-5xl rounded-3xl overflow-hidden shadow-2xl border">
+      <div class="grid md:grid-cols-2">
+        <!-- شعار فقط -->
+        <div class="auth-hero relative p-8 md:p-12 grid place-items-center">
+          <img id="salonLogoLogin" src="" alt="شعار الصالون" class="w-40 h-40 object-contain rounded-2xl shadow-xl bg-white p-4">
+        </div>
+        <!-- فورم الدخول -->
+        <div class="p-8 md:p-12 bg-white">
+          <h2 class="text-xl font-bold text-slate-900 mb-6">تسجيل الدخول</h2>
+          <div class="space-y-4">
+            <label class="block">
+              <span class="text-sm text-gray-700">البريد الإلكتروني</span>
+              <input id="loginEmail" type="email" class="mt-1 w-full rounded-xl border-gray-300 focus:border-[var(--brand)] focus:ring-[var(--brand)] input-pad py-2" placeholder="you@example.com">
+            </label>
+            <label class="block">
+              <span class="text-sm text-gray-700">كلمة المرور</span>
+              <input id="loginPassword" type="password" class="mt-1 w-full rounded-xl border-gray-300 focus:border-[var(--brand)] focus:ring-[var(--brand)] input-pad py-2" placeholder="••••••••">
+            </label>
+            <button id="loginBtn" type="button" class="w-full rounded-xl bg-gradient-to-l from-[var(--brand)] to-[var(--brand-2)] text-white font-semibold py-3 shadow-md hover:opacity-95">
+              دخول <i class="fa-solid fa-arrow-right-to-bracket mr-2"></i>
+            </button>
+          </div>
+          <div class="text-center mt-6 text-sm text-gray-600">
+            ما عندكش حساب؟ <button class="text-[var(--brand)] font-bold" onclick="showSignup()">إنشاء حساب جديد</button>
+          </div>
+          <div class="social flex gap-3 justify-center mt-4 text-xl" id="loginSocial"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= شاشة إنشاء حساب ================= -->
+  <section id="signupScreen" class="min-h-screen grid place-items-center p-6 hidden">
+    <div class="w-full max-w-5xl rounded-3xl overflow-hidden shadow-2xl border">
+      <div class="grid md:grid-cols-2">
+        <!-- شعار فقط -->
+        <div class="auth-hero relative p-8 md:p-12 grid place-items-center">
+          <img id="salonLogoSignup" src="" alt="شعار الصالون" class="w-40 h-40 object-contain rounded-2xl shadow-xl bg-white p-4">
+        </div>
+        <!-- فورم التسجيل -->
+        <div class="p-8 md:p-12 bg-white">
+          <h2 class="text-xl font-bold text-slate-900 mb-6">إنشاء حساب</h2>
+          <div class="space-y-4">
+            <label class="block">
+              <span class="text-sm text-gray-700">البريد الإلكتروني</span>
+              <input id="signupEmail" type="email" class="mt-1 w-full rounded-xl border-gray-300 focus:border-[var(--brand)] focus:ring-[var(--brand)] input-pad py-2" placeholder="you@example.com">
+            </label>
+            <label class="block">
+              <span class="text-sm text-gray-700">اسم العميل</span>
+              <input id="signupFullName" type="text" class="mt-1 w-full rounded-xl border-gray-300 focus:border-[var(--brand)] focus:ring-[var(--brand)] input-pad py-2" placeholder="محمد أحمد">
+            </label>
+            <label class="block">
+              <span class="text-sm text-gray-700">رقم الموبايل</span>
+              <input id="signupPhone" type="tel" class="mt-1 w-full rounded-xl border-gray-300 focus:border-[var(--brand)] focus:ring-[var(--brand)] input-pad py-2" placeholder="01xxxxxxxxx">
+            </label>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <label class="block">
+                <span class="text-sm text-gray-700">كلمة المرور</span>
+                <input id="signupPassword" type="password" class="mt-1 w-full rounded-xl border-gray-300 focus:border-[var(--brand)] focus:ring-[var(--brand)] input-pad py-2" placeholder="••••••••">
+              </label>
+              <label class="block">
+                <span class="text-sm text-gray-700">تأكيد كلمة المرور</span>
+                <input id="signupPasswordConfirm" type="password" class="mt-1 w-full rounded-xl border-gray-300 focus:border-[var(--brand)] focus:ring-[var(--brand)] input-pad py-2" placeholder="••••••••">
+              </label>
+            </div>
+            <button id="signupBtn" type="button" class="w-full rounded-xl bg-gradient-to-l from-[var(--brand)] to-[var(--brand-2)] text-white font-semibold py-3 shadow-md hover:opacity-95">
+              إنشاء الحساب <i class="fa-solid fa-user-check mr-2"></i>
+            </button>
+          </div>
+          <div class="text-center mt-6 text-sm text-gray-600">
+            عندك حساب؟ <button class="text-[var(--brand)] font-bold" onclick="showLogin()">سجّل الدخول</button>
+          </div>
+          <div class="social flex gap-3 justify-center mt-4 text-xl" id="signupSocial"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= التطبيق ================= -->
+  <section id="mainApp" class="hidden">
+    <header class="bg-white/80 backdrop-blur sticky top-0 z-30 border-b">
+      <div class="container-narrow px-4 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <img id="salonLogoSmall" src="" class="w-10 h-10 rounded-xl object-cover border" alt="logo">
+          <div>
+            <h2 id="brandName" class="text-lg font-extrabold text-slate-900">بيوتي بوك</h2>
+            <p class="text-xs text-gray-500">مرحبًا، <span id="userName">ضيف</span></p>
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <div class="social flex gap-3 text-lg" id="appSocial"></div>
+          <button id="logoutBtn" type="button" class="px-3 py-1.5 rounded-lg border text-sm">خروج</button>
+        </div>
+      </div>
+
+      <nav class="container-narrow px-4 pb-3">
+        <div class="flex gap-2">
+          <button class="tab-btn px-4 py-2 rounded-lg border border-[var(--brand)] text-[var(--brand)]" data-tab="home" onclick="showTab('home')">الرئيسية</button>
+          <button class="tab-btn px-4 py-2 rounded-lg border border-transparent text-gray-500 hover:text-[var(--brand)]" data-tab="booking" onclick="showTab('booking')">حجز جديد</button>
+          <button class="tab-btn px-4 py-2 rounded-lg border border-transparent text-gray-500 hover:text-[var(--brand)]" data-tab="profile" onclick="showTab('profile')">الملف الشخصي</button>
+          <button id="adminTabBtn" class="hidden tab-btn px-4 py-2 rounded-lg border border-transparent text-gray-500 hover:text-[var(--brand)]" data-tab="admin" onclick="showTab('admin')">الإدارة</button>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-narrow px-4 py-6 space-y-8">
+      <!-- سلايدر بنرات -->
+      <div id="bannersArea" class="tab-content">
+        <div class="glass rounded-2xl border overflow-hidden">
+          <div class="swiper" dir="rtl">
+            <div class="swiper-wrapper" id="bannersSwiperWrapper"></div>
+            <div class="swiper-pagination"></div>
+            <div class="swiper-button-prev"></div>
+            <div class="swiper-button-next"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- الرئيسية -->
+      <div id="homeTab" class="tab-content">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="p-4 rounded-2xl border glass">
+            <div class="flex items-center justify-between">
+              <div><p class="text-sm text-gray-500">حجوزات مفتوحة</p><p id="openBookingsCount" class="text-2xl font-extrabold text-[var(--brand)]">0</p></div>
+              <span class="w-10 h-10 rounded-xl bg-purple-100 text-[var(--brand)] grid place-items-center"><i class="fa-regular fa-calendar-check"></i></span>
+            </div>
+          </div>
+          <div class="p-4 rounded-2xl border glass">
+            <div class="flex items-center justify-between">
+              <div><p class="text-sm text-gray-500">مكتملة</p><p id="completedBookingsCount" class="text-2xl font-extrabold text-green-600">0</p></div>
+              <span class="w-10 h-10 rounded-xl bg-green-100 text-green-600 grid place-items-center"><i class="fa-solid fa-check"></i></span>
+            </div>
+          </div>
+          <div class="p-4 rounded-2xl border glass">
+            <div class="flex items-center justify-between">
+              <div><p class="text-sm text-gray-500">ملغية</p><p id="cancelledBookingsCount" class="text-2xl font-extrabold text-red-600">0</p></div>
+              <span class="w-10 h-10 rounded-xl bg-red-100 text-red-600 grid place-items-center"><i class="fa-solid fa-xmark"></i></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex gap-2 mt-6">
+          <button class="filter-btn px-3 py-1.5 rounded-lg bg-purple-100 text-[var(--brand)]" onclick="filterBookings('all')">الكل</button>
+          <button class="filter-btn px-3 py-1.5 rounded-lg text-gray-600" onclick="filterBookings('pending')">قيد الانتظار</button>
+          <button class="filter-btn px-3 py-1.5 rounded-lg text-gray-600" onclick="filterBookings('confirmed')">مؤكد</button>
+          <button class="filter-btn px-3 py-1.5 rounded-lg text-gray-600" onclick="filterBookings('completed')">مكتمل</button>
+          <button class="filter-btn px-3 py-1.5 rounded-lg text-gray-600" onclick="filterBookings('cancelled')">ملغي</button>
+        </div>
+
+        <div id="bookingsList" class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+      </div>
+
+      <!-- الحجز -->
+      <div id="bookingTab" class="tab-content hidden">
+        <div id="step1" class="booking-step">
+          <div class="mb-4">
+            <h3 class="text-xl font-bold text-slate-900">1) اختر الخدمات (حتى 3)</h3>
+            <p class="text-gray-600 text-sm">يتم تحميل الخدمات من قاعدة البيانات.</p>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+
+          <div id="selectedServices" class="hidden mt-4 p-4 rounded-2xl glass border">
+            <div class="flex justify-between items-center mb-2">
+              <h4 class="font-semibold">الخدمات المختارة</h4>
+              <div class="text-sm text-gray-600">
+                <span>الإجمالي: <span id="totalPrice" class="text-[var(--brand)] font-bold">0 ج.م</span></span>
+                <span class="mx-2">•</span>
+                <span>المدة: <span id="totalDuration" class="text-[var(--brand)] font-bold">0 دقيقة</span></span>
+              </div>
+            </div>
+            <div id="servicesList" class="space-y-2"></div>
+          </div>
+
+          <div class="mt-6 flex justify-between">
+            <span></span>
+            <button id="step1Next" class="px-4 py-2 rounded-lg bg-gradient-to-l from-[var(--brand)] to-[var(--brand-2)] text-white disabled:opacity-40" disabled onclick="nextStep(2)">
+              التالي <i class="fa-solid fa-arrow-left mr-2"></i>
+            </button>
+          </div>
+        </div>
+
+        <div id="step2" class="booking-step hidden">
+          <div class="mb-4"><h3 class="text-xl font-bold text-slate-900">2) اختر التاريخ</h3></div>
+          <input id="bookingDate" type="date" class="rounded-xl border-gray-300 focus:border-[var(--brand)] focus:ring-[var(--brand)] bg-white p-2" />
+          <div class="mt-6 flex justify-between">
+            <button class="px-4 py-2 rounded-lg border" onclick="prevStep(1)"><i class="fa-solid fa-arrow-right ml-2"></i> رجوع</button>
+            <button id="step2Next" class="px-4 py-2 rounded-lg bg-gradient-to-l from-[var(--brand)] to-[var(--brand-2)] text-white disabled:opacity-40" disabled onclick="nextStep(3)">
+              التالي <i class="fa-solid fa-arrow-left mr-2"></i>
+            </button>
+          </div>
+        </div>
+
+        <div id="step3" class="booking-step hidden">
+          <div class="mb-4"><h3 class="text-xl font-bold text-slate-900">3) اختر الموظف</h3></div>
+          <div id="staffList" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+          <div class="mt-6 flex justify-between">
+            <button class="px-4 py-2 rounded-lg border" onclick="prevStep(2)"><i class="fa-solid fa-arrow-right ml-2"></i> رجوع</button>
+            <button id="step3Next" class="px-4 py-2 rounded-lg bg-gradient-to-l from-[var(--brand)] to-[var(--brand-2)] text-white disabled:opacity-40" disabled onclick="nextStep(4)">
+              التالي <i class="fa-solid fa-arrow-left mr-2"></i>
+            </button>
+          </div>
+        </div>
+
+        <div id="step4" class="booking-step hidden">
+          <div class="mb-4"><h3 class="text-xl font-bold text-slate-900">4) اختر التوقيت</h3></div>
+          <div id="timeSlots" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3"></div>
+          <div class="mt-6 flex justify-between">
+            <button class="px-4 py-2 rounded-lg border" onclick="prevStep(3)"><i class="fa-solid fa-arrow-right ml-2"></i> رجوع</button>
+            <button id="step4Next" class="px-4 py-2 rounded-lg bg-gradient-to-l from-[var(--brand)] to-[var(--brand-2)] text-white disabled:opacity-40" disabled onclick="confirmBooking()">
+              تأكيد الحجز <i class="fa-solid fa-check mr-2"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- الملف الشخصي -->
+      <div id="profileTab" class="tab-content hidden">
+        <div class="glass border rounded-2xl p-4 max-w-xl">
+          <h3 class="text-xl font-bold text-slate-900 mb-4">بياناتي</h3>
+          <div class="space-y-4">
+            <label class="block"><span class="text-sm text-gray-700">الاسم الكامل</span>
+              <input id="profileName" type="text" class="mt-1 w-full rounded-xl border-gray-300 focus:border-[var(--brand)] focus:ring-[var(--brand)] input-pad py-2">
+            </label>
+            <label class="block"><span class="text-sm text-gray-700">رقم الموبايل</span>
+              <input id="profilePhone" type="tel" class="mt-1 w-full rounded-xl border-gray-300 focus:border-[var(--brand)] focus:ring-[var(--brand)] input-pad py-2">
+            </label>
+            <label class="block"><span class="text-sm text-gray-700">البريد الإلكتروني</span>
+              <input id="profileEmail" type="email" class="mt-1 w-full rounded-xl border-gray-300 bg-gray-100 input-pad py-2" readonly>
+            </label>
+            <div class="pt-2">
+              <button onclick="updateProfile()" class="px-4 py-2 rounded-xl bg-gradient-to-l from-[var(--brand)] to-[var(--brand-2)] text-white">حفظ التغييرات</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- الإدارة -->
+      <div id="adminTab" class="tab-content hidden">
+        <div class="grid md:grid-cols-2 gap-6">
+          <div class="glass border rounded-2xl p-4">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-bold">صور الموظفين</h3>
+              <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-[var(--brand)]">Admin</span>
+            </div>
+            <div id="adminStaffList" class="space-y-3 text-sm"></div>
+          </div>
+
+          <div class="glass border rounded-2xl p-4">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-bold">البنرات (السلايدر)</h3>
+              <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-pink-100 text-[var(--brand-2)]">Slider</span>
+            </div>
+
+            <div class="border-dashed border-2 rounded-xl p-3 mb-4">
+              <h4 class="font-semibold mb-2">إضافة بانر جديد</h4>
+              <div class="grid sm:grid-cols-2 gap-3">
+                <input id="bannerTitle" type="text" class="rounded-xl border-gray-300 input-pad py-2" placeholder="عنوان (اختياري)">
+                <input id="bannerLink" type="url" class="rounded-xl border-gray-300 input-pad py-2" placeholder="رابط (اختياري)">
+              </div>
+              <div class="mt-3 flex items-center gap-3">
+                <input id="bannerFile" type="file" accept="image/*" class="block w-full text-sm">
+                <button onclick="adminAddBanner()" class="px-4 py-2 rounded-xl bg-gradient-to-l from-[var(--brand)] to-[var(--brand-2)] text-white">رفع وحفظ</button>
+              </div>
+              <p class="text-xs text-gray-500 mt-2">Bucket: <code>banners</code> (قراءة عامة).</p>
+            </div>
+
+            <div id="adminBannersList" class="space-y-3 text-sm"></div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </section>
+
+  <!-- مودالات -->
+  <div id="receiptModal" class="hidden fixed inset-0 z-40 items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/50"></div>
+    <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+      <div class="absolute top-3 left-3">
+        <button class="text-gray-500 hover:text-gray-700" onclick="closeModal('receiptModal')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div id="receiptContent"></div>
+      <div class="mt-6 flex gap-2">
+        <button class="flex-1 bg-gray-100 hover:bg-gray-200 rounded-lg py-2" onclick="printReceipt()"><i class="fa-solid fa-print ml-2"></i> طباعة</button>
+        <button class="flex-1 bg-gradient-to-l from-[var(--brand)] to-[var(--brand-2)] text-white rounded-lg py-2" onclick="downloadReceipt()"><i class="fa-solid fa-download ml-2"></i> تنزيل</button>
+      </div>
+    </div>
+  </div>
+  <div id="bookingModal" class="hidden fixed inset-0 z-40 items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/50"></div>
+    <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-lg p-6">
+      <div class="absolute top-3 left-3">
+        <button class="text-gray-500 hover:text-gray-700" onclick="closeModal('bookingModal')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div id="bookingDetails"></div>
+    </div>
+  </div>
+  <div id="ratingModal" class="hidden fixed inset-0 z-40 items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/50"></div>
+    <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+      <div class="absolute top-3 left-3">
+        <button class="text-gray-500 hover:text-gray-700" onclick="closeModal('ratingModal')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <h3 class="text-xl font-bold mb-2">قيّم التجربة</h3>
+      <p class="text-gray-600 text-sm mb-3">اختر عدد النجوم وأضف تعليقًا (اختياري).</p>
+      <div class="flex gap-2 text-2xl mb-4">
+        <button class="star-btn text-gray-300" onclick="setRating(1)">★</button>
+        <button class="star-btn text-gray-300" onclick="setRating(2)">★</button>
+        <button class="star-btn text-gray-300" onclick="setRating(3)">★</button>
+        <button class="star-btn text-gray-300" onclick="setRating(4)">★</button>
+        <button class="star-btn text-gray-300" onclick="setRating(5)">★</button>
+      </div>
+      <textarea id="ratingComment" class="w-full rounded-xl border-gray-300 focus:border-[var(--brand)] focus:ring-[var(--brand)] input-pad" rows="3" placeholder="تعليقك..."></textarea>
+      <div class="mt-4">
+        <button class="w-full bg-yellow-500 hover:bg-yellow-600 text-white rounded-xl py-2" onclick="submitRating()">
+          إرسال التقييم
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- مكتبات -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- سكربت التطبيق -->
+  <script>
+  /* ================= إعدادات Supabase ================= */
+  const SUPABASE_URL      = 'https://tfackgkhzdvuwearbeyl.supabase.co';   // ← غيّر
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRmYWNrZ2toemR2dXdlYXJiZXlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc4OTA5NDcsImV4cCI6MjA3MzQ2Njk0N30.odWDKneV-XkQmJNmGpUQDi93C2pRMpTbXdZ1MDkTAbs';                      // ← غيّر (لا تستخدم service_role في المتصفح)
+  // اجعلها متاحة على window للفحوصات المبكّرة
+  window.SUPABASE_URL = SUPABASE_URL;
+  window.SUPABASE_ANON_KEY = SUPABASE_ANON_KEY;
+
+  const SUPABASE_OK = !!(window.supabase && window.supabase.createClient);
+  const supabase = SUPABASE_OK ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
+  /* Fallback شعار */
+  const FALLBACK_LOGO_URL = 'https://placehold.co/300x300/png?text=Salon+Logo';
+
+  /* Storage buckets */
+  const STAFF_BUCKET   = 'staff-avatars';
+  const BANNERS_BUCKET = 'banners';
+
+  /* ================= حالة عامة ================= */
+  let authUser=null, currentUser=null, dbServices=[], servicesByCode={}, selectedServices=[],
+      selectedStaff=null, selectedDate=null, selectedTime=null, currentBookingId=null, currentRating=0,
+      bookings=[], bannersSwiper=null, salonInfo=null;
+
+  const $  = (sel, root=document) => root.querySelector(sel);
+  const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
+  const toMinutes=(hhmm)=>{ const [h,m]=hhmm.split(':').map(Number); return h*60+m; };
+  const minutesToHHMM=(mins)=>`${String(Math.floor(mins/60)).padStart(2,'0')}:${String(mins%60).padStart(2,'0')}`;
+  const weekdayIndex=(d)=>new Date(d+'T00:00:00').getDay(); // 0=الأحد .. 6=السبت
+  const arabicStatus=(s)=>s==='pending'?'قيد الانتظار':s==='confirmed'?'مؤكد':s==='completed'?'منتهي':'ملغي';
+
+  /* ===== حارس مبكّر لمنع الصفحة البيضاء + تسجيل الأخطاء ===== */
+  // إظهار شاشة الدخول كـ Fallback
+  document.getElementById('loginScreen')?.classList.remove('hidden');
+  document.getElementById('mainApp')?.classList.add('hidden');
+  // عرض أي أخطاء في توست بدل ما تختفي
+  window.addEventListener('error',  (e)=>{ try{ showNotification('خطأ: '+e.message, 'error'); }catch{} });
+  window.addEventListener('unhandledrejection', (e)=>{ try{ showNotification('خطأ غير متوقّع بالواجهة', 'error'); }catch{} });
+  // تنبيه لو مفاتيح سوبابيز مش متضبطة
+  if (!String(window.SUPABASE_URL||'').includes('supabase.co') || window.SUPABASE_ANON_KEY==='YOUR-ANON-KEY') {
+    try{ showNotification('⚠️ رجاء ضبط إعدادات Supabase URL و ANON KEY في أعلى الملف', 'warning'); }catch{}
+  }
+
+  /* ===== Helpers UI ===== */
+  function setLogo(url){
+    const src = url || FALLBACK_LOGO_URL;
+    ['#salonLogoLogin','#salonLogoSignup','#salonLogoSmall'].forEach(id=>{
+      const img=$(id); if(img) img.src=src;
+    });
+  }
+  function setBrandName(name){ if(name){ const h=$('#brandName'); if(h) h.textContent = name; document.title = name+' – حجوزات'; } }
+  function setSocialLinks(info, containerIds=['loginSocial','signupSocial','appSocial']){
+    const links = [];
+    if(info?.facebook_url)  links.push(`<a href="${info.facebook_url}" target="_blank" title="Facebook"><i class="fa-brands fa-facebook"></i></a>`);
+    if(info?.instagram_url) links.push(`<a href="${info.instagram_url}" target="_blank" title="Instagram"><i class="fa-brands fa-instagram"></i></a>`);
+    if(info?.tiktok_url)    links.push(`<a href="${info.tiktok_url}" target="_blank" title="TikTok"><i class="fa-brands fa-tiktok"></i></a>`);
+    if(info?.whatsapp_phone)links.push(`<a href="https://wa.me/${info.whatsapp_phone}" target="_blank" title="WhatsApp"><i class="fa-brands fa-whatsapp"></i></a>`);
+    containerIds.forEach(id=>{ const c=document.getElementById(id); if(c) c.innerHTML = links.join(''); });
+  }
+
+  /* ================= تنقّل بين شاشات الدخول/التسجيل ================= */
+  function showSignup(){
+    document.getElementById('loginScreen')?.classList.add('hidden');
+    document.getElementById('signupScreen')?.classList.remove('hidden');
+  }
+  function showLogin(){
+    document.getElementById('signupScreen')?.classList.add('hidden');
+    document.getElementById('loginScreen')?.classList.remove('hidden');
+  }
+
+  /* ================= بدء التشغيل ================= */
+  document.addEventListener('DOMContentLoaded', async () => {
+    if (!SUPABASE_OK){ console.error('Supabase library not loaded.'); try{ showNotification('تعذّر تحميل مكتبة Supabase. تأكد من الاتصال بالإنترنت.', 'error'); }catch{} }
+
+    // أزرار + Enter
+    document.getElementById('loginBtn')?.addEventListener('click', signInWithEmail);
+    document.getElementById('signupBtn')?.addEventListener('click', signUpWithEmail);
+    document.getElementById('logoutBtn')?.addEventListener('click', signOut);
+    ['loginEmail','loginPassword'].forEach(id => { const el=document.getElementById(id); if(el) el.addEventListener('keydown', e=>{ if(e.key==='Enter') signInWithEmail(); });});
+    ['signupEmail','signupFullName','signupPhone','signupPassword','signupPasswordConfirm'].forEach(id => { const el=document.getElementById(id); if(el) el.addEventListener('keydown', e=>{ if(e.key==='Enter') signUpWithEmail(); });});
+
+    // اسحب بيانات الصالون
+    await fetchSalonInfo();
+
+    if (SUPABASE_OK){
+      // جلسة حالية
+      const { data:{ session } } = await supabase.auth.getSession();
+      if (session?.user) { authUser = session.user; await postLoginSetup(); }
+      else { document.getElementById('loginScreen')?.classList.remove('hidden'); }
+
+      // مراقبة تغيّر الحالة
+      supabase.auth.onAuthStateChange(async (_event, session) => {
+        if (session?.user) { authUser = session.user; await postLoginSetup(); }
+        else {
+          authUser = null; currentUser = null;
+          document.getElementById('mainApp')?.classList.add('hidden');
+          showLogin();
+        }
+      });
+
+      // تحميل أساسي
+      await loadServicesFromDB();
+      await loadBannersFromDB();
+    }else{
+      document.getElementById('loginScreen')?.classList.remove('hidden');
+    }
+
+    // أقل تاريخ للحجز
+    const bookingDate = document.getElementById('bookingDate');
+    if (bookingDate){
+      const today = new Date().toISOString().split('T')[0];
+      bookingDate.min = today;
+      bookingDate.addEventListener('change', () => { selectedDate = bookingDate.value; const nxt=document.getElementById('step2Next'); if(nxt) nxt.disabled = !selectedDate; });
+    }
+  });
+
+  /* ================= جلب بيانات الصالون ================= */
+  async function fetchSalonInfo(){
+    try{
+      if (!SUPABASE_OK){ setLogo(FALLBACK_LOGO_URL); setBrandName('بيوتي بوك'); return; }
+      const { data, error } = await supabase.from('salon_info').select('*').eq('active', true).order('updated_at', {ascending:false}).limit(1);
+      if (error) throw error;
+      salonInfo = (data && data[0]) || null;
+      setLogo(salonInfo?.logo_url || FALLBACK_LOGO_URL);
+      setBrandName(salonInfo?.name || 'بيوتي بوك');
+      setSocialLinks(salonInfo);
+    }catch(e){
+      console.error(e);
+      setLogo(FALLBACK_LOGO_URL);
+      setBrandName('بيوتي بوك');
+    }
+  }
+
+  /* ================= Auth: تسجيل الدخول ================= */
+  async function signInWithEmail(){
+    const btn=document.getElementById('loginBtn');
+    try{
+      if (!SUPABASE_OK) return showNotification('مكتبة Supabase غير متاحة', 'error');
+      if (btn){ btn.disabled=true; btn.textContent='جاري الدخول...'; }
+      const email=document.getElementById('loginEmail')?.value?.trim();
+      const password=document.getElementById('loginPassword')?.value;
+      if (!email || !password){ showNotification('أدخل البريد وكلمة المرور','error'); return; }
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      authUser = data.user;
+      await postLoginSetup();
+    }catch(e){
+      const isAuthFail = (e?.name === 'AuthApiError') || /invalid|email|password/i.test(e?.message||'');
+      showNotification(isAuthFail ? ('فشل تسجيل الدخول: ' + (e.message||'')) : 'حدث خطأ غير متوقّع بالواجهة وتم تجاوزه.', isAuthFail ? 'error' : 'warning');
+      console.error('signInWithEmail:', e);
+    }finally{
+      if (btn){ btn.disabled=false; btn.innerHTML='دخول <i class="fa-solid fa-arrow-right-to-bracket mr-2"></i>'; }
+    }
+  }
+
+  /* ================= Auth: إنشاء حساب ================= */
+  async function signUpWithEmail(){
+    const btn=document.getElementById('signupBtn');
+    try{
+      if (!SUPABASE_OK) return showNotification('مكتبة Supabase غير متاحة', 'error');
+      if (btn){ btn.disabled=true; btn.textContent='جاري إنشاء الحساب...'; }
+      const email=document.getElementById('signupEmail')?.value?.trim();
+      const fullName=document.getElementById('signupFullName')?.value?.trim();
+      const phone=document.getElementById('signupPhone')?.value?.trim();
+      const pass=document.getElementById('signupPassword')?.value;
+      const pass2=document.getElementById('signupPasswordConfirm')?.value;
+
+      if (!email || !fullName || !phone || !pass || !pass2){ showNotification('أدخل جميع الحقول المطلوبة','error'); return; }
+      if (pass !== pass2){ showNotification('تأكيد كلمة المرور غير مطابق','error'); return; }
+
+      const { data, error } = await supabase.auth.signUp({ email, password: pass, options: { data: { full_name: fullName, phone } } });
+      if (error) throw error;
+
+      if (data.session?.user) {
+        authUser = data.session.user;
+        await postLoginSetup();
+        showNotification('تم إنشاء الحساب وتسجيل الدخول','success');
+      } else {
+        showNotification('تم إنشاء الحساب. راجع بريدك لتأكيد التسجيل ثم سجّل الدخول.','info');
+        showLogin();
+      }
+    }catch(e){ showNotification('فشل إنشاء الحساب: '+(e.message||''),'error'); }
+    finally{ if (btn){ btn.disabled=false; btn.innerHTML='إنشاء الحساب <i class="fa-solid fa-user-check mr-2"></i>'; } }
+  }
+
+  /* ================= بعد تسجيل الدخول ================= */
+  async function postLoginSetup(){
+    try{
+      await ensureCustomerProfile(); // عبر RPC
+      const un = document.getElementById('userName');
+      if (un) un.textContent = currentUser?.full_name || authUser?.email || 'مستخدم';
+
+      const pn = document.getElementById('profileName');
+      const pp = document.getElementById('profilePhone');
+      const pe = document.getElementById('profileEmail');
+      if (pn) pn.value = currentUser?.full_name || '';
+      if (pp) pp.value = currentUser?.phone || '';
+      if (pe) pe.value = authUser?.email || '';
+
+      if (currentUser?.is_admin) document.getElementById('adminTabBtn')?.classList.remove('hidden');
+      else document.getElementById('adminTabBtn')?.classList.add('hidden');
+
+      document.getElementById('loginScreen')?.classList.add('hidden');
+      document.getElementById('signupScreen')?.classList.add('hidden');
+      document.getElementById('mainApp')?.classList.remove('hidden');
+
+      await refreshDashboard();
+      showTab('home');
+      if (currentUser?.is_admin) { try { await renderAdminPanels(); } catch(e){ console.warn('admin panels:', e); } }
+    }catch(e){
+      console.error('postLoginSetup error:', e);
+      showNotification('تم تسجيل الدخول، لكن حدث خطأ بسيط في الواجهة. جرّب تحديث الصفحة.', 'warning');
+      document.getElementById('mainApp')?.classList.remove('hidden');
+      showTab('home');
+    }
+  }
+
+  /* ================= customers via RPC ================= */
+  async function ensureCustomerProfile(){
+    try{
+      if (!SUPABASE_OK) return;
+      const { data, error } = await supabase.rpc('ensure_customer_profile');
+      if (error) throw error;
+      currentUser = data;
+    }catch(e){
+      console.error(e);
+      showNotification('خطأ في مزامنة الملف الشخصي (customers). راجع RLS/Policies.', 'error');
+    }
+  }
+
+  /* ================= خروج ================= */
+  async function signOut(){
+    if (!SUPABASE_OK) return;
+    await supabase.auth.signOut();
+    authUser=null; currentUser=null;
+    document.getElementById('mainApp')?.classList.add('hidden');
+    showLogin();
+  }
+
+  /* ================= تبويبات ================= */
+  function showTab(tabName) {
+    $$('.tab-content').forEach(t => t.classList.add('hidden'));
+    document.getElementById(`${tabName}Tab`)?.classList.remove('hidden');
+    if (tabName==='home') document.getElementById('bannersArea')?.classList.remove('hidden');
+    else document.getElementById('bannersArea')?.classList.add('hidden');
+
+    $$('.tab-btn').forEach(btn => { btn.classList.remove('border-[var(--brand)]','text-[var(--brand)]'); btn.classList.add('border-transparent','text-gray-500'); });
+    const activeBtn = document.querySelector(`.tab-btn[data-tab="${tabName}"]`);
+    if (activeBtn){ activeBtn.classList.add('border-[var(--brand)]','text-[var(--brand)]'); activeBtn.classList.remove('border-transparent','text-gray-500'); }
+  }
+
+  /* ================= الخدمات ================= */
+  async function loadServicesFromDB(){
+    if (!SUPABASE_OK) return;
+    const { data, error } = await supabase.from('services').select('id, code, name_ar, duration_min, price_egp').eq('active', true).order('name_ar');
+    if (error) { showNotification('تعذر تحميل الخدمات','error'); console.error(error); return; }
+    dbServices = data || []; servicesByCode = {}; dbServices.forEach(s => servicesByCode[s.code] = s);
+    const grid = document.querySelector('#step1 .grid');
+    if (grid){
+      grid.innerHTML = dbServices.map(s => `
+        <div class="service-item p-4 border-2 glass rounded-2xl cursor-pointer hover:border-[var(--brand)] transition-colors" data-service="${s.code}">
+          <div class="flex justify-between items-center">
+            <div><h4 class="font-semibold">${s.name_ar}</h4><p class="text-gray-600 text-sm">خدمة: ${s.code}</p></div>
+            <div class="text-left"><p class="font-bold text-[var(--brand)]">${s.price_egp} ج.م</p><p class="text-sm text-gray-500">${s.duration_min} دقيقة</p></div>
+          </div>
+        </div>
+      `).join('');
+      setupServiceSelection();
+    }
+  }
+  function setupServiceSelection(){
+    $$('#step1 .service-item').forEach(item=>{
+      item.addEventListener('click', ()=>{
+        const s=servicesByCode[item.dataset.service]; if(!s) return;
+        const exists = selectedServices.find(x=>x.code===s.code);
+        if (exists){ item.classList.remove('border-[var(--brand)]','bg-purple-50'); selectedServices = selectedServices.filter(x=>x.code!==s.code); }
+        else {
+          if (selectedServices.length>=3) return showNotification('يمكنك اختيار 3 خدمات كحد أقصى','warning');
+          item.classList.add('border-[var(--brand)]','bg-purple-50');
+          selectedServices.push({ id:s.id, code:s.code, name:s.name_ar, price:s.price_egp, duration:s.duration_min });
+        }
+        updateSelectedServices();
+      });
+    });
+  }
+  function updateSelectedServices(){
+    const container=document.getElementById('selectedServices');
+    const list=document.getElementById('servicesList');
+    const nextBtn=document.getElementById('step1Next');
+    if (selectedServices.length===0){ container?.classList.add('hidden'); if(nextBtn) nextBtn.disabled=true; return; }
+    container?.classList.remove('hidden'); if(nextBtn) nextBtn.disabled=false;
+    if(list) list.innerHTML = selectedServices.map(s=>`<div class="flex justify-between items-center p-2 bg-white rounded-xl border"><span>${s.name}</span><span class="text-[var(--brand)] font-medium">${s.price} ج.م</span></div>`).join('');
+    const totalPrice=selectedServices.reduce((a,s)=>a+s.price,0), totalDuration=selectedServices.reduce((a,s)=>a+s.duration,0);
+    const tp=document.getElementById('totalPrice'); const td=document.getElementById('totalDuration');
+    if (tp) tp.textContent=`${totalPrice} ج.م`; if (td) td.textContent=`${totalDuration} دقيقة`;
+  }
+  function nextStep(step){ $$('.booking-step').forEach(s=>s.classList.add('hidden')); document.getElementById(`step${step}`)?.classList.remove('hidden'); if(step===3) loadAvailableStaff(); if(step===4) loadTimeSlots(); }
+  function prevStep(step){ $$('.booking-step').forEach(s=>s.classList.add('hidden')); document.getElementById(`step${step}`)?.classList.remove('hidden'); }
+
+  /* ================= الموظفون (آمن تشخيصيًا) ================= */
+  async function loadAvailableStaff(){
+    if (!SUPABASE_OK) return;
+    const container = document.getElementById('staffList'); if(!container) return;
+    const { data, error } = await supabase.from('staff').select('*');
+    if (error) {
+      console.error('loadAvailableStaff error:', error);
+      showNotification('تعذر تحميل الموظفين: ' + (error.message || error.details || ''), 'error');
+      container.innerHTML = '<p class="text-center text-red-600">حدث خطأ في تحميل الموظفين</p>';
+      return;
+    }
+    const list = (data || []).filter(r => (typeof r.active === 'boolean' ? r.active : true));
+    if (!list.length){
+      container.innerHTML = '<p class="text-center text-gray-500">لا يوجد موظفون متاحون</p>';
+      return;
+    }
+    container.innerHTML = list
+      .sort((a,b)=> String(a.full_name||'').localeCompare(String(b.full_name||''),'ar'))
+      .map(m=>`
+        <div class="staff-item p-4 border-2 glass rounded-2xl cursor-pointer hover:border-[var(--brand)] transition-colors" data-staff-id="${m.id}">
+          <div class="flex items-center gap-3">
+            ${m.avatar_url
+              ? `<img src="${m.avatar_url}" class="w-14 h-14 rounded-xl object-cover border" alt="${m.full_name||''}">`
+              : `<div class="w-14 h-14 rounded-xl grid place-items-center bg-purple-50 text-3xl border">${m.avatar_emoji||'👤'}</div>`}
+            <div class="flex-1">
+              <h4 class="font-semibold">${m.full_name||'موظف'}</h4>
+              <p class="text-sm text-gray-600">خبرة ${m.experience_years ?? 0} سنوات</p>
+              <div class="flex items-center mt-1 text-sm text-gray-600"><span>⭐</span><span class="mr-1">${Number(m.rating_avg||0).toFixed(1)}</span></div>
+            </div>
+          </div>
+        </div>
+      `).join('');
+
+    document.querySelectorAll('.staff-item').forEach(card=>{
+      card.addEventListener('click', ()=>{
+        document.querySelectorAll('.staff-item').forEach(i=>i.classList.remove('border-[var(--brand)]','bg-purple-50'));
+        card.classList.add('border-[var(--brand)]','bg-purple-50');
+        selectedStaff = card.dataset.staffId;
+        const btn = document.getElementById('step3Next'); if (btn) btn.disabled = false;
+      });
+    });
+  }
+
+  /* ================= المواعيد ================= */
+  async function loadTimeSlots(){
+    if (!SUPABASE_OK) return;
+    const container=document.getElementById('timeSlots'); if(!container) return;
+    container.innerHTML = '...';
+    if (!selectedStaff || !selectedDate || selectedServices.length===0) { container.innerHTML='<p class="col-span-full text-center text-gray-500">اختر الخدمات والتاريخ والموظف أولاً</p>'; return; }
+    const needMin = selectedServices.reduce((a,s)=>a+s.duration,0);
+
+    const wd=weekdayIndex(selectedDate);
+    const { data: sch } = await supabase.from('staff_schedule').select('start_time, end_time, active').eq('staff_id', selectedStaff).eq('weekday', wd).maybeSingle();
+    if (!sch || sch.active===false) { container.innerHTML='<p class="col-span-full text-center text-gray-500">لا يوجد دوام في هذا اليوم</p>'; return; }
+
+    const { data: exists } = await supabase.from('bookings').select('booking_time, total_duration, status').eq('staff_id', selectedStaff).eq('booking_date', selectedDate).in('status',['pending','confirmed']);
+    const busy = (exists||[]).map(b=>[toMinutes(b.booking_time), toMinutes(b.booking_time)+(b.total_duration||0)]);
+
+    const dayStart=toMinutes(sch.start_time), dayEnd=toMinutes(sch.end_time), step=30, slots=[];
+    for(let t=dayStart; t+needMin<=dayEnd; t+=step){ const s=t,e=t+needMin; const overlap=busy.some(([bs,be]) => !(e<=bs || s>=be)); if(!overlap) slots.push(minutesToHHMM(t)); }
+    if(!slots.length) { container.innerHTML='<p class="col-span-full text-center text-gray-500">لا توجد مواعيد متاحة لهذه المدة</p>'; return; }
+
+    container.innerHTML = slots.map(time=>`<button class="time-slot p-3 border-2 rounded-xl font-medium transition-colors glass hover:border-[var(--brand)]" data-time="${time}">${time}</button>`).join('');
+    $$('.time-slot').forEach(btn=>btn.addEventListener('click', ()=>{ $$('.time-slot').forEach(s=>s.classList.remove('border-[var(--brand)]','bg-purple-50')); btn.classList.add('border-[var(--brand)]','bg-purple-50'); selectedTime=btn.dataset.time; const n=document.getElementById('step4Next'); if(n) n.disabled=false; }));
+  }
+
+  /* ================= إنشاء حجز ================= */
+  async function confirmBooking(){
+    if (!SUPABASE_OK) return showNotification('مكتبة Supabase غير متاحة', 'error');
+    if (!authUser || !currentUser) return showNotification('سجّل دخول أولاً','error');
+    if (!selectedStaff || !selectedDate || !selectedTime || selectedServices.length===0) return showNotification('أكمل خطوات الحجز','warning');
+
+    const totalPrice=selectedServices.reduce((a,s)=>a+s.price,0);
+    const totalDuration=selectedServices.reduce((a,s)=>a+s.duration,0);
+
+    const { data: created, error: bErr } = await supabase.from('bookings').insert({
+      customer_id: currentUser.id, staff_id: selectedStaff, booking_date: selectedDate, booking_time: selectedTime, status:'pending', total_price_egp: totalPrice, total_duration: totalDuration
+    }).select().single();
+    if (bErr){ showNotification('تعذر إنشاء الحجز','error'); console.error(bErr); return; }
+
+    const items=selectedServices.map(s=>({ booking_id: created.id, service_id: s.id, price_egp_snap: s.price, duration_min_snap: s.duration }));
+    const { error: liErr } = await supabase.from('booking_services').insert(items);
+    if (liErr) { showNotification('تم إنشاء الحجز لكن حدث خطأ في حفظ الخدمات','warning'); console.error(liErr); }
+
+    selectedServices=[]; selectedStaff=null; selectedDate=null; selectedTime=null;
+    $$('#step1 .service-item').forEach(i=>i.classList.remove('border-[var(--brand)]','bg-purple-50'));
+    document.getElementById('selectedServices')?.classList.add('hidden'); $$('.booking-step').forEach(s=>s.classList.add('hidden')); document.getElementById('step1')?.classList.remove('hidden'); const nx=document.getElementById('step1Next'); if(nx) nx.disabled=true;
+
+    showNotification('تم إرسال طلب الحجز بنجاح!','success');
+    await refreshDashboard(); await showReceiptFromDB(created.id); showTab('home');
+  }
+
+  /* ================= إيصال ================= */
+  async function showReceiptFromDB(bookingId){
+    if (!SUPABASE_OK) return;
+    try{
+      const { data: codeRow } = await supabase.from('bookings').select('booking_code').eq('id', bookingId).single();
+      const { data: r } = await supabase.from('v_booking_receipt').select('*').eq('booking_code', codeRow?.booking_code).maybeSingle();
+      const b = r || {};
+      const token = b?.qr_token || `BOOKING:${b?.booking_code||bookingId}`;
+      const content = document.getElementById('receiptContent');
+      if (!content) return;
+      content.innerHTML = `
+        <div class="text-center mb-6"><h2 class="text-xl font-bold text-[var(--brand)]">${salonInfo?.name||'بيوتي بوك'}</h2><p class="text-gray-600">إيصال حجز</p></div>
+        <div class="space-y-3 mb-6">
+          <div class="flex justify-between"><span class="text-gray-600">رقم الحجز:</span><span class="font-medium">#${b?.booking_code||''}</span></div>
+          <div class="flex justify-between"><span class="text-gray-600">العميل:</span><span class="font-medium">${b?.customer_name||''}</span></div>
+          <div class="flex justify-between"><span class="text-gray-600">التاريخ:</span><span class="font-medium">${b?.booking_date||''}</span></div>
+          <div class="flex justify-between"><span class="text-gray-600">الوقت:</span><span class="font-medium">${b?.booking_time||''}</span></div>
+          <div class="flex justify-between"><span class="text-gray-600">الموظف:</span><span class="font-medium">${b?.staff_name||''}</span></div>
+          <div class="flex justify-between"><span class="text-gray-600">الإجمالي:</span><span class="font-bold text-[var(--brand)]">${b?.total_price_egp||0} ج.م</span></div>
+        </div>
+        <div class="text-center"><canvas id="qr-${bookingId}" class="inline-block"></canvas><p class="text-sm text-gray-600 mt-2">امسح الكود للتحقق من الحجز</p></div>`;
+      QRCode.toCanvas(document.getElementById(`qr-${bookingId}`), token, { width: 120, height: 120 });
+      const modal = document.getElementById('receiptModal'); modal?.classList.remove('hidden'); modal?.classList.add('flex');
+    }catch(e){ console.error(e); }
+  }
+  function printReceipt(){ window.print(); }
+  function downloadReceipt(){ showNotification('تم حفظ الإيصال بنجاح','success'); }
+
+  /* ================= لوحة التحكم ================= */
+  async function refreshDashboard(){
+    if (!SUPABASE_OK || !currentUser) return;
+    await loadBookings();
+    await loadCounters();
+    await refreshNotificationsBadge();
+  }
+
+  async function loadBookings(){
+    const { data, error } = await supabase.from('bookings').select('id, booking_code, booking_date, booking_time, status, total_price_egp, staff:staff_id(full_name)').eq('customer_id', currentUser.id).order('created_at',{ascending:false});
+    if (error){ console.error(error); showNotification('تعذر تحميل الحجوزات','error'); return; }
+
+    const ids=(data||[]).map(b=>b.id); let itemsByBooking={};
+    if (ids.length){
+      const { data: lines } = await supabase.from('booking_services').select('booking_id, price_egp_snap, services:service_id(name_ar)').in('booking_id', ids);
+      (lines||[]).forEach(li=>{ (itemsByBooking[li.booking_id] ||= []).push({ name: li.services?.name_ar || 'خدمة', price: li.price_egp_snap }); });
+    }
+
+    bookings=(data||[]).map(b=>({ id:b.id, code:b.booking_code, services:itemsByBooking[b.id]||[], staff:{name:b.staff?.full_name||''}, date:b.booking_date, time:b.booking_time, status:b.status, totalPrice:b.total_price_egp }));
+    const container=document.getElementById('bookingsList');
+    if(!container) return;
+    if(!bookings.length){ container.innerHTML='<p class="text-center text-gray-500 py-8">لا توجد حجوزات حتى الآن</p>'; updateBookingCountsUI(0,0,0); return; }
+    const statusColors={ pending:'bg-yellow-100 text-yellow-800', confirmed:'bg-blue-100 text-blue-800', completed:'bg-green-100 text-green-800', cancelled:'bg-red-100 text-red-800' };
+    container.innerHTML = bookings.map(b=>`
+      <div class="booking-card p-4 border rounded-2xl glass" data-status="${b.status}">
+        <div class="flex justify-between items-start mb-3">
+          <div><h4 class="font-semibold text-lg">#${b.code}</h4><p class="text-gray-600">${b.services.map(s=>s.name).join(', ')||'-'}</p></div>
+          <span class="px-3 py-1 rounded-full text-sm font-medium ${statusColors[b.status]}">${arabicStatus(b.status)}</span>
+        </div>
+        <div class="grid grid-cols-2 gap-4 text-sm text-gray-600 mb-4">
+          <div><i class="fa-regular fa-calendar ml-1"></i>${b.date}</div>
+          <div><i class="fa-regular fa-clock ml-1"></i>${b.time}</div>
+          <div><i class="fa-regular fa-user ml-1"></i>${b.staff.name}</div>
+          <div><i class="fa-solid fa-money-bill ml-1"></i>${b.totalPrice} ج.م</div>
+        </div>
+        <div class="flex gap-2">
+          <button onclick="viewBookingDetails('${b.id}')" class="flex-1 bg-gray-100 text-gray-700 px-3 py-2 rounded text-sm hover:bg-gray-200">التفاصيل</button>
+          ${(b.status==='pending'||b.status==='confirmed')?`<button onclick="cancelBooking('${b.id}')" class="bg-red-100 text-red-700 px-3 py-2 rounded text-sm hover:bg-red-200">إلغاء</button>`:''}
+          ${b.status==='completed'?`<button onclick="rateBooking('${b.id}')" class="bg-yellow-100 text-yellow-700 px-3 py-2 rounded text-sm hover:bg-yellow-200">تقييم</button>`:''}
+        </div>
+      </div>`).join('');
+    const open=bookings.filter(b=>b.status==='pending'||b.status==='confirmed').length, done=bookings.filter(b=>b.status==='completed').length, canc=bookings.filter(b=>b.status==='cancelled').length;
+    updateBookingCountsUI(open,done,canc);
+  }
+  function updateBookingCountsUI(open,done,canc){
+    const o=document.getElementById('openBookingsCount');
+    const d=document.getElementById('completedBookingsCount');
+    const c=document.getElementById('cancelledBookingsCount');
+    if(o) o.textContent=open; if(d) d.textContent=done; if(c) c.textContent=canc;
+  }
+  async function loadCounters(){
+    const { data } = await supabase.from('v_customer_booking_counts').select('*').eq('customer_id', currentUser.id).maybeSingle();
+    if(data) updateBookingCountsUI(data.open_count||0, data.completed_count||0, data.cancelled_count||0);
+  }
+  async function refreshNotificationsBadge(){
+    const el=document.getElementById('notificationBadge');
+    if (!el) return;
+    const { count } = await supabase.from('notifications').select('id',{count:'exact',head:true}).eq('customer_id', currentUser.id).eq('is_read',false);
+    if((count||0)>0){ el.textContent=count; el.classList.remove('hidden'); } else el.classList.add('hidden');
+  }
+  function viewBookingDetails(id){
+    const b=bookings.find(x=>x.id===id); if(!b) return;
+    const details=document.getElementById('bookingDetails'); if(!details) return;
+    details.innerHTML=`<div class="space-y-4">
+      <div class="text-center pb-4 border-b">
+        <h4 class="text-lg font-bold">حجز #${b.code}</h4>
+        <span class="inline-block px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 mt-2">${arabicStatus(b.status)}</span>
+      </div>
+      <div><h5 class="font-semibold mb-2">الخدمات:</h5>${(b.services||[]).map(s=>`<div class="flex justify-between py-1"><span>${s.name}</span><span>${s.price||''} ج.م</span></div>`).join('')||'<p class="text-gray-500">—</p>'}</div>
+      <div class="grid grid-cols-2 gap-4 text-sm">
+        <div><span class="text-gray-600">التاريخ:</span><p class="font-medium">${b.date}</p></div>
+        <div><span class="text-gray-600">الوقت:</span><p class="font-medium">${b.time}</p></div>
+        <div><span class="text-gray-600">الموظف:</span><p class="font-medium">${b.staff.name}</p></div>
+        <div><span class="text-gray-600">الإجمالي:</span><p class="font-medium text-[var(--brand)]">${b.totalPrice} ج.م</p></div>
+      </div></div>`;
+    const modal=document.getElementById('bookingModal'); modal?.classList.remove('hidden'); modal?.classList.add('flex');
+  }
+  async function cancelBooking(id){
+    if(!confirm('هل أنت متأكد من إلغاء هذا الحجز؟')) return;
+    const { error } = await supabase.from('bookings').update({status:'cancelled', cancelled_at:new Date().toISOString()}).eq('id', id);
+    if(error) return showNotification('تعذر إلغاء الحجز','error');
+    showNotification('تم إلغاء الحجز بنجاح','success'); await refreshDashboard();
+  }
+  function rateBooking(id){
+    currentBookingId=id; currentRating=0;
+    const t=document.getElementById('ratingComment'); if (t) t.value='';
+    $$('.star-btn').forEach(btn=>{btn.classList.remove('text-yellow-400');btn.classList.add('text-gray-300');});
+    const m=document.getElementById('ratingModal'); m?.classList.remove('hidden'); m?.classList.add('flex');
+  }
+  function setRating(r){
+    currentRating=r;
+    $$('.star-btn').forEach((btn,idx)=>{ if(idx<r){btn.classList.remove('text-gray-300');btn.classList.add('text-yellow-400');} else {btn.classList.remove('text-yellow-400');btn.classList.add('text-gray-300');} });
+  }
+  async function submitRating(){
+    if(!currentRating) return showNotification('يرجى اختيار تقييم','warning');
+    if(!currentUser||!currentBookingId) return;
+    const comment=document.getElementById('ratingComment')?.value?.trim()||null;
+    const { error } = await supabase.from('ratings').insert({ booking_id: currentBookingId, customer_id: currentUser.id, stars: currentRating, comment });
+    if(error) return showNotification('تعذر إرسال التقييم','error');
+    closeModal('ratingModal'); showNotification('شكراً لك! تم إرسال التقييم','success'); await refreshDashboard();
+  }
+
+  /* ================= الملف الشخصي: تحديث ================= */
+  async function updateProfile(){
+    try{
+      if (!SUPABASE_OK || !currentUser) return;
+      const full = document.getElementById('profileName')?.value?.trim() || '';
+      const phone= document.getElementById('profilePhone')?.value?.trim() || '';
+      const { error } = await supabase.from('customers').update({ full_name: full, phone }).eq('id', currentUser.id);
+      if (error) throw error;
+      currentUser.full_name = full; currentUser.phone = phone;
+      const un = document.getElementById('userName'); if (un) un.textContent = full || authUser?.email || 'مستخدم';
+      showNotification('تم حفظ التغييرات','success');
+    }catch(e){
+      console.error(e);
+      showNotification('تعذر حفظ الملف الشخصي (تحقّق من سياسات RLS لجدول customers).','error');
+    }
+  }
+
+  /* ================= إدارة ================= */
+  async function renderAdminPanels(){
+    if (!SUPABASE_OK || !currentUser?.is_admin) return;
+    const { data: staff } = await supabase.from('staff').select('id, full_name, avatar_url, avatar_emoji, experience_years').order('full_name');
+    const sWrap = document.getElementById('adminStaffList');
+    if (sWrap) {
+      sWrap.innerHTML = (staff||[]).map(st => `
+        <div class="border rounded-xl p-3 flex items-center gap-3">
+          ${st.avatar_url?`<img src="${st.avatar_url}" class="w-12 h-12 rounded-lg object-cover border" alt="${st.full_name}">`:`<div class="w-12 h-12 rounded-lg grid place-items-center bg-purple-50 text-2xl border">${st.avatar_emoji||'👤'}</div>`}
+          <div class="flex-1"><div class="font-semibold">${st.full_name}</div><div class="text-xs text-gray-600">خبرة ${st.experience_years} سنوات</div></div>
+          <input type="file" accept="image/*" class="text-xs" id="file-${st.id}">
+          <button class="px-3 py-1.5 rounded-lg bg-gradient-to-l from-[var(--brand)] to-[var(--brand-2)] text-white text-xs" onclick="adminUploadStaffAvatar('${st.id}')">رفع صورة</button>
+        </div>
+      `).join('') || '<p class="text-gray-500">لا يوجد موظفون.</p>';
+    }
+
+    const { data: banners } = await supabase.from('banners').select('*').order('position');
+    const bWrap = document.getElementById('adminBannersList');
+    if (bWrap) {
+      bWrap.innerHTML = (banners||[]).map(b=>`
+        <div class="border rounded-xl p-3 flex items-center gap-3">
+          <img src="${b.image_url}" class="w-20 h-12 object-cover rounded-lg border" alt="">
+          <div class="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <input value="${b.title||''}" placeholder="عنوان" class="rounded-lg border-gray-300 text-sm input-pad py-1.5" id="b-title-${b.id}">
+            <input value="${b.link_url||''}" placeholder="رابط" class="rounded-lg border-gray-300 text-sm input-pad py-1.5" id="b-link-${b.id}">
+          </div>
+          <label class="flex items-center gap-2 text-sm"><input type="checkbox" ${b.active?'checked':''} id="b-active-${b.id}"> فعال</label>
+          <input type="number" class="w-20 rounded-lg border-gray-300 text-sm input-pad py-1.5" value="${b.position||0}" id="b-pos-${b.id}" title="الترتيب">
+          <button class="px-3 py-1.5 rounded-lg bg-gray-100 text-sm" onclick="adminUpdateBanner('${b.id}')">حفظ</button>
+          <button class="px-3 py-1.5 rounded-lg bg-red-100 text-red-700 text-sm" onclick="adminDeleteBanner('${b.id}')">حذف</button>
+        </div>
+      `).join('') || '<p class="text-gray-500">لا توجد بنرات.</p>';
+    }
+  }
+  async function uploadPublicFile(bucket, file, pathPrefix=''){
+    const ext=(file.name.split('.').pop()||'jpg').toLowerCase();
+    const path=`${pathPrefix}${Date.now()}.${ext}`;
+    const { error: upErr } = await supabase.storage.from(bucket).upload(path, file, { upsert:true, contentType:file.type });
+    if (upErr) throw upErr;
+    const { data: pub } = supabase.storage.from(bucket).getPublicUrl(path);
+    return pub.publicUrl;
+  }
+  async function adminUploadStaffAvatar(staffId){
+    try{
+      const inp=document.getElementById(`file-${staffId}`);
+      if(!inp?.files?.length) return showNotification('اختر صورة أولاً','warning');
+      const url=await uploadPublicFile(STAFF_BUCKET, inp.files[0], `${staffId}/`);
+      const { error } = await supabase.from('staff').update({ avatar_url: url }).eq('id', staffId);
+      if (error) throw error;
+      showNotification('تم رفع الصورة','success'); await renderAdminPanels();
+    }catch(e){ console.error(e); showNotification('فشل رفع الصورة','error'); }
+  }
+  async function adminAddBanner(){
+    try{
+      const f=document.getElementById('bannerFile');
+      if(!f?.files?.length) return showNotification('اختر صورة للبنر','warning');
+      const url=await uploadPublicFile(BANNERS_BUCKET, f.files[0], '');
+      const title=document.getElementById('bannerTitle')?.value?.trim()||null;
+      const link=document.getElementById('bannerLink')?.value?.trim()||null;
+      const { error }=await supabase.from('banners').insert({ image_url:url, title, link_url:link, active:true, position:0 });
+      if(error) throw error;
+      if (document.getElementById('bannerTitle')) document.getElementById('bannerTitle').value='';
+      if (document.getElementById('bannerLink')) document.getElementById('bannerLink').value='';
+      f.value='';
+      showNotification('تم إضافة البنر','success');
+      await loadBannersFromDB(); await renderAdminPanels();
+    }catch(e){ console.error(e); showNotification('فشل إضافة البنر','error'); }
+  }
+  async function adminUpdateBanner(id){
+    try{
+      const title=document.getElementById(`b-title-${id}`)?.value?.trim()||null;
+      const link=document.getElementById(`b-link-${id}`)?.value?.trim()||null;
+      const active=document.getElementById(`b-active-${id}`)?.checked||false;
+      const pos=Number(document.getElementById(`b-pos-${id}`)?.value||0);
+      const { error }=await supabase.from('banners').update({ title, link_url:link, active, position:pos }).eq('id', id);
+      if(error) throw error;
+      showNotification('تم حفظ التعديلات','success'); await loadBannersFromDB();
+    }catch(e){ console.error(e); showNotification('تعذر الحفظ','error'); }
+  }
+  async function adminDeleteBanner(id){
+    if(!confirm('حذف هذا البنر نهائيًا؟')) return;
+    try{
+      const { error } = await supabase.from('banners').delete().eq('id', id);
+      if(error) throw error;
+      showNotification('تم حذف البنر','success'); await loadBannersFromDB(); await renderAdminPanels();
+    }catch(e){ console.error(e); showNotification('تعذر الحذف','error'); }
+  }
+
+  /* ================= بنرات ================= */
+  async function loadBannersFromDB(){
+    if (!SUPABASE_OK) return;
+    const wrap = document.getElementById('bannersSwiperWrapper'); if (!wrap) return;
+    const { data, error } = await supabase.from('banners').select('id, image_url, title, link_url').eq('active', true).order('position');
+    if (error) { console.error(error); return; }
+    const banners = data || [];
+    if (!banners.length) {
+      wrap.innerHTML = `<div class="swiper-slide"><div class="h-44 sm:h-64 bg-gradient-to-l from-[var(--brand)] to-[var(--brand-2)] grid place-items-center text-white"><div class="text-center"><div class="text-2xl font-extrabold">${salonInfo?.name || 'أهلاً بك'}</div><div class="opacity-90 mt-1">أضف بانراتك من تبويب الإدارة</div></div></div></div>`;
+    } else {
+      wrap.innerHTML = banners.map(b => `
+        <div class="swiper-slide">
+          ${b.link_url ? `<a href="${b.link_url}" target="_blank" rel="noopener">` : ``}
+          <div class="h-44 sm:h-64 overflow-hidden"><img src="${b.image_url}" class="w-full h-full object-cover" alt="${b.title||''}"></div>
+          ${b.link_url ? `</a>` : ``}
+        </div>
+      `).join('');
+    }
+    setTimeout(()=> {
+      if (bannersSwiper && bannersSwiper.destroy) bannersSwiper.destroy(true, true);
+      bannersSwiper = new Swiper('.swiper', { loop:true, rtl:true, autoplay:{ delay:3500 }, pagination:{ el:'.swiper-pagination', clickable:true }, navigation:{ nextEl:'.swiper-button-next', prevEl:'.swiper-button-prev' }});
+    }, 0);
+  }
+
+  /* ================= فِلتر الحجوزات ================= */
+  function filterBookings(status){
+    const cards = $$('.booking-card');
+    if (!cards.length) return;
+    cards.forEach(card=>{
+      const s = card.getAttribute('data-status');
+      if (status==='all' || s===status) card.classList.remove('hidden');
+      else card.classList.add('hidden');
+    });
+    const btns=$$('.filter-btn');
+    btns.forEach(b=>b.classList.remove('bg-purple-100','text-[var(--brand)]'));
+    const map={all:0,pending:1,confirmed:2,completed:3,cancelled:4};
+    const idx=map[status]; if (btns[idx]) btns[idx].classList.add('bg-purple-100','text-[var(--brand)]');
+  }
+
+  /* ================= أدوات عامة ================= */
+  function closeModal(id){ const m=document.getElementById(id); m?.classList.add('hidden'); m?.classList.remove('flex'); }
+  function showNotification(message,type='info'){
+    const container=document.getElementById('notifications'); if(!container) return;
+    const div=document.createElement('div');
+    const colors={success:'bg-green-600',error:'bg-red-600',warning:'bg-yellow-500',info:'bg-blue-600'};
+    div.className=`notification ${colors[type]} text-white px-4 py-3 rounded-lg shadow-lg max-w-sm`;
+    div.innerHTML=`<div class="flex items-center justify-between gap-4"><span>${message}</span><button onclick="this.closest('.notification').remove()" class="text-white/90 hover:text-white"><i class="fa-solid fa-xmark"></i></button></div>`;
+    container.appendChild(div);
+    setTimeout(()=>{ if(div.parentElement) div.remove(); }, 4500);
+  }
+  document.addEventListener('click', (e)=>{
+    if (e.target.classList?.contains('fixed') && e.target.classList?.contains('inset-0')) {
+      e.target.classList.add('hidden'); e.target.classList.remove('flex');
+    }
+  });
+  </script>
+
+  <!--
+  ملاحظة: تأكد من تشغيل سكربت SQL النهائي الذي أرسلته لك سابقًا (BeautyBook – Full Schema Bootstrap)
+  قبل استخدام هذا الملف. بعدها غيّر SUPABASE_URL و SUPABASE_ANON_KEY في أعلى السكربت.
+  -->
+</body>
+</html>
