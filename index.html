@@ -22,7 +22,7 @@
       --ink:#0f172a;
       --card:#ffffffcc;
       --bg-grad: linear-gradient(135deg,#faf5ff 0%, #fff7ed 100%);
-      /* NEW: لضبط مساحة أسفل الصفحة مع شريط التنقل السفلي */
+      /* لضبط مساحة أسفل الصفحة مع شريط التنقل السفلي */
       --bottom-nav-h: 72px;   /* الارتفاع التقريبي للـBottom Nav */
       --fab-size: 56px;       /* قطر زر الحجز الطافي */
     }
@@ -43,17 +43,20 @@
     .staff-card{ transition:.2s; border-width:2px; }
     .staff-card:hover{ border-color: var(--brand); background:#f5f3ff; }
 
-    /* NEW: مساحة أسفل المحتوى لحماية العناصر من التغطية بالـBottom Nav */
+    /* مساحة أسفل المحتوى لحماية العناصر من التغطية بالـBottom Nav */
     main{
       padding-bottom: calc(var(--bottom-nav-h) + var(--fab-size) + env(safe-area-inset-bottom) + 64px);
     }
-    /* NEW: تبويبي الحجز وحجوزاتي يحتاجوا مساحة أكبر */
+    /* تبويبي الحجز وحجوزاتي يحتاجوا مساحة أكبر */
     #bookingTab,
     #bookingsTab{
       padding-bottom: calc(var(--bottom-nav-h) + var(--fab-size) + env(safe-area-inset-bottom) + 120px) !important;
     }
 
     .bn-active{ color: var(--brand); }
+
+    /* تحسين بانل الإشعارات */
+    #notifyPanel{ box-shadow: 0 20px 40px rgba(15, 23, 42, .15); }
   </style>
 </head>
 <body class="min-h-screen">
@@ -151,33 +154,36 @@
 
   <!-- ============= التطبيق ============= -->
   <section id="mainApp" class="hidden">
+    <!-- HEADER المعدل: زر الإشعارات أقصى اليسار، والبانل يفتح يمينه -->
     <header class="bg-white/80 backdrop-blur sticky top-0 z-30 border-b">
-      <div class="container-narrow px-4 py-3 flex items-center justify-between">
-        <div class="flex items-center gap-3">
+      <div class="container-narrow px-4 py-3 grid grid-cols-[auto_1fr_auto] items-center gap-3">
+        <!-- يسار: الإشعارات -->
+        <div class="relative justify-self-start">
+          <button id="notifyBtn" type="button"
+                  class="relative px-3 py-1.5 rounded-lg border text-sm flex items-center gap-2">
+            <i class="fa-regular fa-bell"></i>
+            <span class="sr-only">الإشعارات</span>
+            <span id="notifyBadge"
+                  class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] px-1.5 rounded-full hidden">0</span>
+          </button>
+          <div id="notifyPanel"
+               class="hidden absolute left-0 right-auto mt-2 w-72 sm:w-80 max-w-[92vw] max-h-80 overflow-auto bg-white border rounded-xl shadow-xl z-50 p-2">
+            <div id="notifyList" class="space-y-2 text-sm"></div>
+          </div>
+        </div>
+
+        <!-- وسط: الشعار والاسم -->
+        <div class="flex items-center gap-3 justify-self-center">
           <img id="salonLogoSmall" src="" class="w-10 h-10 rounded-xl object-cover border" alt="logo">
           <div>
             <h2 id="brandName" class="text-lg font-extrabold text-slate-900">بيوتي بوك</h2>
             <p class="text-xs text-gray-500">مرحبًا، <span id="userName">ضيف</span></p>
           </div>
         </div>
-        <div class="flex items-center gap-2">
+
+        <!-- يمين: سوشيال + إدارة + خروج -->
+        <div class="flex items-center gap-2 justify-self-end">
           <div class="social flex gap-3 text-lg" id="appSocial"></div>
-
-          <!-- زر الإشعارات -->
-          <div class="relative">
-            <button id="notifyBtn" type="button"
-                    class="relative px-3 py-1.5 rounded-lg border text-sm flex items-center gap-2">
-              <i class="fa-regular fa-bell"></i>
-              <span class="sr-only">الإشعارات</span>
-              <span id="notifyBadge"
-                    class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] px-1.5 rounded-full hidden">0</span>
-            </button>
-            <div id="notifyPanel"
-                 class="hidden absolute left-0 mt-2 w-72 max-h-80 overflow-auto bg-white border rounded-xl shadow-xl z-50 p-2">
-              <div id="notifyList" class="space-y-2 text-sm"></div>
-            </div>
-          </div>
-
           <button id="adminBtn" type="button" class="hidden px-3 py-1.5 rounded-lg border text-sm" onclick="showTab('admin')">الإدارة</button>
           <button id="logoutBtn" type="button" class="px-3 py-1.5 rounded-lg border text-sm">خروج</button>
         </div>
@@ -377,7 +383,7 @@
         </div>
       </div>
 
-      <!-- NEW: Spacer لضمان ظهور آخر العناصر فوق الشريط السفلي -->
+      <!-- Spacer لضمان ظهور آخر العناصر فوق الشريط السفلي -->
       <div class="h-[160px]"></div>
     </main>
 
@@ -578,24 +584,23 @@
     finally{ btn && (btn.disabled=false, btn.innerHTML='إنشاء الحساب <i class="fa-solid fa-user-check mr-2"></i>'); }
   }
 
-  // محاولة ذكية: RPC، ولو فشل نجرب قراءة/إنشاء صف العميل
   async function ensureCustomerProfile(){
-    // 1) جرّب RPC الرسمي
+    // 1) RPC الرسمي
     const rpc = await supabase.rpc('ensure_customer_profile');
     if (!rpc.error && rpc.data) return (currentUser = rpc.data);
 
-    // 2) fallback: قراءة صفّ العميل
+    // 2) fallback قراءة/إنشاء
     const uid = (await supabase.auth.getUser()).data?.user?.id;
     if (!uid) throw new Error('no auth uid');
     const { data: cRow } = await supabase.from('customers').select('*').eq('auth_user_id', uid).maybeSingle();
 
     if (cRow) { currentUser = cRow; return cRow; }
 
-    // 3) fallback إنشاء بسيط (لو سياساتك تسمح)
+    const metaUser = (await supabase.auth.getUser()).data?.user;
     const { data: inserted, error: insErr } = await supabase.from('customers').insert({
       auth_user_id: uid,
-      full_name: (await supabase.auth.getUser()).data?.user?.user_metadata?.full_name || null,
-      phone: (await supabase.auth.getUser()).data?.user?.user_metadata?.phone || null
+      full_name: metaUser?.user_metadata?.full_name || null,
+      phone:     metaUser?.user_metadata?.phone || null
     }).select().single();
 
     if (insErr) throw insErr;
@@ -941,32 +946,96 @@
       </div>`).join('');
   }
 
-  /* ===== تقييمات ===== */
-  function rateBooking(id){
-    currentBookingId=id; currentRating=0;
-    const t=document.getElementById('ratingComment'); if (t) t.value='';
-    $$('.star-btn').forEach(btn=>{btn.classList.remove('text-yellow-400');btn.classList.add('text-gray-300');});
-    const m=document.getElementById('ratingModal'); m?.classList.remove('hidden'); m?.classList.add('flex');
+  /* ===== تقييمات (إصلاح التعارض بالتحديث إن وُجد) ===== */
+  async function getExistingRating(bookingId){
+    if(!currentUser) return null;
+    const { data, error } = await supabase
+      .from('ratings')
+      .select('id, stars, comment')
+      .eq('booking_id', bookingId)
+      .eq('customer_id', currentUser.id)
+      .maybeSingle();
+    if (error && error.code !== 'PGRST116') console.warn('getExistingRating', error);
+    return data || null;
   }
+
+  // افتح مودال التقييم مع تعبئة القيم لو التقييم موجود
+  function rateBooking(id){
+    currentBookingId = id;
+    currentRating = 0;
+
+    const t = document.getElementById('ratingComment');
+    if (t) t.value = '';
+
+    getExistingRating(id).then(r => {
+      if (r){
+        if (t) t.value = r.comment || '';
+        setRating(r.stars || 0);
+      } else {
+        setRating(0);
+      }
+      const m=document.getElementById('ratingModal');
+      m?.classList.remove('hidden'); m?.classList.add('flex');
+    });
+  }
+
   function setRating(r){
     currentRating=r;
     $$('.star-btn').forEach((btn,idx)=>{ if(idx<r){btn.classList.remove('text-gray-300');btn.classList.add('text-yellow-400');} else {btn.classList.remove('text-yellow-400');btn.classList.add('text-gray-300');} });
   }
+
   async function submitRating(){
     if(!currentRating) return showNotification('يرجى اختيار عدد النجوم أولاً','warning');
     if(!currentUser||!currentBookingId) return showNotification('لا يوجد حجز محدد','error');
+
+    // تحقق سريع: الحجز يخصّ المستخدم ومكتمل
     try{
-      const { data: chkBook, error: chkErr } = await supabase.from('bookings').select('id, customer_id, status').eq('id', currentBookingId).maybeSingle();
-      if (chkErr) return showNotification('تعذر التحقق من الحجز', 'error');
-      if (!chkBook || chkBook.customer_id !== currentUser.id) return showNotification('لا يمكنك تقييم حجز لا يخصك', 'error');
-      if (chkBook.status !== 'completed') return showNotification('يمكن تقييم الحجوزات المكتملة فقط', 'warning');
-    }catch(e){ console.error('pre-check failed', e); return showNotification('تعذر التحقق من الحجز', 'error'); }
+      const { data: chkBook, error: chkErr } = await supabase
+        .from('bookings')
+        .select('id, customer_id, status')
+        .eq('id', currentBookingId)
+        .maybeSingle();
+      if (chkErr) return showNotification('تعذر التحقق من الحجز','error');
+      if (!chkBook || chkBook.customer_id !== currentUser.id)
+        return showNotification('لا يمكنك تقييم حجز لا يخصك','error');
+      if (chkBook.status !== 'completed')
+        return showNotification('يمكن تقييم الحجوزات المكتملة فقط','warning');
+    }catch(e){
+      console.error('pre-check failed', e);
+      return showNotification('تعذر التحقق من الحجز','error');
+    }
+
     const comment = document.getElementById('ratingComment')?.value?.trim() || null;
+
     try{
-      const { error } = await supabase.from('ratings').insert({ booking_id:  currentBookingId, customer_id: currentUser.id, stars: currentRating, comment }).select().single();
-      if (error) throw error;
-      closeModal('ratingModal'); showNotification('شكراً لك! تم إرسال التقييم','success'); await refreshDashboard();
-    }catch(e){ console.error('submitRating error:', e); showNotification('تعذر إرسال التقييم: ' + (e.message||''), 'error'); }
+      const existing = await getExistingRating(currentBookingId);
+      if (existing){
+        // تحديث التقييم الحالي
+        const { error: upErr } = await supabase
+          .from('ratings')
+          .update({ stars: currentRating, comment })
+          .eq('id', existing.id);
+        if (upErr) throw upErr;
+        showNotification('تم تحديث تقييمك','success');
+      } else {
+        // إدراج تقييم جديد
+        const { error: insErr } = await supabase
+          .from('ratings')
+          .insert({
+            booking_id:  currentBookingId,
+            customer_id: currentUser.id,
+            stars:       currentRating,
+            comment
+          });
+        if (insErr) throw insErr;
+        showNotification('تم إرسال التقييم','success');
+      }
+      closeModal('ratingModal');
+      await refreshDashboard();
+    }catch(e){
+      console.error('submitRating error:', e);
+      showNotification('تعذر إرسال/تحديث التقييم: ' + (e.message||''), 'error');
+    }
   }
 
   /* ===== إدارة (ستاف + بنرات) ===== */
@@ -1128,7 +1197,8 @@
   ملاحظات:
   - عدّل SUPABASE_URL و SUPABASE_ANON_KEY أعلاه.
   - تمت إضافة Padding سفلي ديناميكي وSpacer لضمان ظهور الأزرار والمحتوى فوق شريط التنقل السفلي.
-  - تأكد من وجود الجداول/السياسات طبقًا لملف SQL النهائي الذي أرسلته لك.
+  - تم نقل زر الإشعارات لأقصى اليسار مع Panel بعرض مناسب داخل الشاشة.
+  - تم إصلاح إرسال التقييم ليقوم بالتحديث إذا كان موجودًا مسبقًا.
   -->
 </body>
 </html>
