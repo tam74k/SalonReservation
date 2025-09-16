@@ -36,24 +36,21 @@
     .social a{ transition: .15s; }
     .social a:hover{ opacity:.85; transform: translateY(-1px); }
 
-    /* تكبير كروت الموظفين – موبايل نفس روح الصورة */
-    .staff-card{
-      transition: .2s;
-      border-width: 2px;
-    }
-    .staff-card:hover{ border-color: var(--brand); background: #f5f3ff; }
+    /* كروت الموظفين أكبر (موبايل) */
+    .staff-card{ transition:.2s; border-width:2px; }
+    .staff-card:hover{ border-color: var(--brand); background:#f5f3ff; }
+
     /* مساحة أسفل المحتوى بسبب شريط التنقل السفلي */
     main{ padding-bottom: 96px; }
-    /* Bottom nav active */
     .bn-active{ color: var(--brand); }
   </style>
 </head>
 <body class="min-h-screen">
 
-  <!-- Toasts -->
+  <!-- إشعارات -->
   <div id="notifications" class="fixed top-4 left-4 z-50 space-y-3"></div>
 
-  <!-- ============= شاشة تسجيل الدخول (ظاهرة كـ fallback) ============= -->
+  <!-- ============= شاشة تسجيل الدخول ============= -->
   <section id="loginScreen" class="min-h-screen grid place-items-center p-6">
     <div class="w-full max-w-5xl rounded-3xl overflow-hidden shadow-2xl border">
       <div class="grid md:grid-cols-2">
@@ -152,8 +149,9 @@
             <p class="text-xs text-gray-500">مرحبًا، <span id="userName">ضيف</span></p>
           </div>
         </div>
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2">
           <div class="social flex gap-3 text-lg" id="appSocial"></div>
+          <button id="adminBtn" type="button" class="hidden px-3 py-1.5 rounded-lg border text-sm" onclick="showTab('admin')">الإدارة</button>
           <button id="logoutBtn" type="button" class="px-3 py-1.5 rounded-lg border text-sm">خروج</button>
         </div>
       </div>
@@ -233,7 +231,7 @@
         <div id="bookingsList" class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4"></div>
       </div>
 
-      <!-- معالج الحجز (الخطوات) -->
+      <!-- معالج الحجز -->
       <div id="bookingTab" class="tab-content hidden">
         <div id="step1" class="booking-step">
           <div class="mb-4">
@@ -317,7 +315,7 @@
         </div>
       </div>
 
-      <!-- الإدارة (كما هي) -->
+      <!-- الإدارة -->
       <div id="adminTab" class="tab-content hidden">
         <div class="grid md:grid-cols-2 gap-6">
           <div class="glass border rounded-2xl p-4">
@@ -378,7 +376,7 @@
     </nav>
   </section>
 
-  <!-- مودالات (كما كانت) -->
+  <!-- مودالات -->
   <div id="receiptModal" class="hidden fixed inset-0 z-40 items-center justify-center p-4">
     <div class="absolute inset-0 bg-black/50"></div>
     <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
@@ -421,11 +419,11 @@
 
   <!-- سكربت التطبيق -->
   <script>
-  /* ===== إعدادات Supabase ===== */
+  /* ===== إعدادات Supabase (عدّل القيم) ===== */
   const SUPABASE_URL      = 'https://tfackgkhzdvuwearbeyl.supabase.co';   // ← غيّر
-  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRmYWNrZ2toemR2dXdlYXJiZXlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc4OTA5NDcsImV4cCI6MjA3MzQ2Njk0N30.odWDKneV-XkQmJNmGpUQDi93C2pRMpTbXdZ1MDkTAbs';                      // ← غيّر
-  window.SUPABASE_URL = SUPABASE_URL; window.SUPABASE_ANON_KEY = SUPABASE_ANON_KEY;
-  const supabase = (window.supabase && window.supabase.createClient) ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRmYWNrZ2toemR2dXdlYXJiZXlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc4OTA5NDcsImV4cCI6MjA3MzQ2Njk0N30.odWDKneV-XkQmJNmGpUQDi93C2pRMpTbXdZ1MDkTAbs';                      // ← غيّر (لا تستخدم service_role في المتصفح)
+  const supabase = (window.supabase && window.supabase.createClient)
+    ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
   const FALLBACK_LOGO_URL = 'https://placehold.co/300x300/png?text=Salon+Logo';
   const STAFF_BUCKET='staff-avatars', BANNERS_BUCKET='banners', OFFERS_BUCKET='offers';
@@ -433,23 +431,21 @@
   /* ===== حالة عامة ===== */
   let authUser=null, currentUser=null, dbServices=[], servicesByCode={},
       selectedServices=[], selectedStaff=null, selectedDate=null, selectedTime=null,
-      bookings=[], bannersSwiper=null, salonInfo=null, currentBookingId=null, currentRating=0;
+      bookings=[], salonInfo=null, currentBookingId=null, currentRating=0;
 
   const $  = (sel, root=document) => root.querySelector(sel);
   const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
   const toMinutes=(hhmm)=>{ const [h,m]=hhmm.split(':').map(Number); return h*60+m; };
   const minutesToHHMM=(mins)=>`${String(Math.floor(mins/60)).padStart(2,'0')}:${String(mins%60).padStart(2,'0')}`;
-  const weekdayIndex=(d)=>new Date(d+'T00:00:00').getDay();
+  const weekdayIndex=(d)=>new Date(d+'T00:00:00').getDay(); // 0=الأحد
   const arabicStatus=(s)=>s==='pending'?'قيد الانتظار':s==='confirmed'?'مؤكد':s==='completed'?'منتهي':'ملغي';
   const fmt=(n)=> new Intl.NumberFormat('ar-EG').format(n);
 
   // Fallback لمنع الشاشة البيضاء
   document.getElementById('loginScreen')?.classList.remove('hidden');
   document.getElementById('mainApp')?.classList.add('hidden');
-  window.addEventListener('error',  (e)=>{ try{ showNotification('خطأ: '+e.message, 'error'); }catch{} });
-  window.addEventListener('unhandledrejection', (e)=>{ try{ showNotification('خطأ غير متوقّع بالواجهة', 'error'); }catch{} });
 
-  /* ===== UI Helpers ===== */
+  /* ===== Helpers UI ===== */
   function setLogo(url){ const src=url||FALLBACK_LOGO_URL; ['#salonLogoLogin','#salonLogoSignup','#salonLogoSmall'].forEach(id=>{ const img=$(id); if(img) img.src=src; }); }
   function setBrandName(name){
     const brand = name || 'بيوتي بوك';
@@ -466,12 +462,11 @@
     if(info?.whatsapp_phone)links.push(`<a href="https://wa.me/${info.whatsapp_phone}" target="_blank" title="WhatsApp"><i class="fa-brands fa-whatsapp"></i></a>`);
     ids.forEach(id=>{ const c=document.getElementById(id); if(c) c.innerHTML = links.join(''); });
   }
-
   function showSignup(){ $('#loginScreen')?.classList.add('hidden'); $('#signupScreen')?.classList.remove('hidden'); }
   function showLogin(){ $('#signupScreen')?.classList.add('hidden'); $('#loginScreen')?.classList.remove('hidden'); }
 
   document.addEventListener('DOMContentLoaded', async () => {
-    // أزرار Auth
+    // Auth events
     $('#loginBtn')?.addEventListener('click', signInWithEmail);
     $('#signupBtn')?.addEventListener('click', signUpWithEmail);
     $('#logoutBtn')?.addEventListener('click', signOut);
@@ -481,14 +476,18 @@
     await fetchSalonInfo();
     await loadServicesFromDB();
     await loadBannersFromDB();
-    await loadBestOffers(); // الرئيسية
-    // جلسة
+    await loadBestOffers();
+
+    // جلسة حالية
     const { data:{ session } } = await supabase.auth.getSession();
     if (session?.user) { authUser = session.user; await postLoginSetup(); }
-    supabase.auth.onAuthStateChange(async (_e, session) => { if (session?.user) { authUser=session.user; await postLoginSetup(); } else { authUser=null; currentUser=null; $('#mainApp')?.classList.add('hidden'); showLogin(); } });
+    supabase.auth.onAuthStateChange(async (_e, s) => {
+      if (s?.user) { authUser=s.user; await postLoginSetup(); }
+      else { authUser=null; currentUser=null; $('#mainApp')?.classList.add('hidden'); showLogin(); }
+    });
 
     // تاريخ الحجز
-    const dt=$('#bookingDate'); if(dt){ const today=new Date().toISOString().split('T')[0]; dt.min=today; dt.addEventListener('change', ()=>{ selectedDate=dt.value; const n=$('#step2Next'); if(n) n.disabled=!selectedDate; }); }
+    const dt=$('#bookingDate'); if(dt){ const t=new Date().toISOString().split('T')[0]; dt.min=t; dt.addEventListener('change', ()=>{ selectedDate=dt.value; const n=$('#step2Next'); if(n) n.disabled=!selectedDate; }); }
   });
 
   async function fetchSalonInfo(){
@@ -527,6 +526,7 @@
     finally{ btn && (btn.disabled=false, btn.innerHTML='إنشاء الحساب <i class="fa-solid fa-user-check mr-2"></i>'); }
   }
   async function ensureCustomerProfile(){
+    // تعتمد على RPC في السيرفر: ensure_customer_profile
     const { data, error } = await supabase.rpc('ensure_customer_profile');
     if (error) throw error;
     currentUser=data;
@@ -538,29 +538,26 @@
       $('#profileName') && ($('#profileName').value = currentUser?.full_name || '');
       $('#profilePhone') && ($('#profilePhone').value = currentUser?.phone || '');
       $('#profileEmail') && ($('#profileEmail').value = authUser?.email || '');
-      (currentUser?.is_admin ? $('#adminTabBtn')?.classList.remove('hidden') : $('#adminTabBtn')?.classList.add('hidden'));
+      // زر الإدارة للأدمن فقط
+      const adminBtn = document.getElementById('adminBtn');
+      if (adminBtn) adminBtn.classList[currentUser?.is_admin ? 'remove' : 'add']('hidden');
       $('#loginScreen')?.classList.add('hidden'); $('#signupScreen')?.classList.add('hidden'); $('#mainApp')?.classList.remove('hidden');
       await refreshDashboard();
       showTab('home');
+      if (currentUser?.is_admin) renderAdminPanels();
     }catch(e){ console.error(e); showNotification('تم الدخول لكن تعذّر تهيئة الواجهة','warning'); $('#mainApp')?.classList.remove('hidden'); showTab('home'); }
   }
   async function signOut(){ await supabase.auth.signOut(); authUser=null; currentUser=null; $('#mainApp')?.classList.add('hidden'); showLogin(); }
 
-  /* ===== تبويب/تنقّل ===== */
+  /* ===== تبويبات ===== */
   function showTab(tab){
-    // إخفاء الكل
-    ['home','offers','bookings','profile','booking'].forEach(t => { document.getElementById(t+'Tab')?.classList.add('hidden'); });
-    // إظهار
+    ['home','offers','bookings','profile','booking','admin'].forEach(t => { document.getElementById(t+'Tab')?.classList.add('hidden'); });
     document.getElementById(tab+'Tab')?.classList.remove('hidden');
-    // بنرات تُعرض في الرئيسية فقط
     (tab==='home' ? $('#bannersArea')?.classList.remove('hidden') : $('#bannersArea')?.classList.add('hidden'));
-    // تفعيل زر الـBottomNav
     $$('nav [data-tab]').forEach(btn => btn.classList.remove('bn-active'));
     const activeBtn = document.querySelector(`nav [data-tab="${tab}"]`); activeBtn && activeBtn.classList.add('bn-active');
-    // تحميلات خاصة
     if(tab==='offers') loadOffers();
     if(tab==='bookings') loadBookings();
-    if(tab==='profile')  {} // nothing
   }
   function showBookingWizard(){ showTab('booking'); }
 
@@ -607,12 +604,26 @@
   function nextStep(step){ $$('.booking-step').forEach(s=>s.classList.add('hidden')); document.getElementById(`step${step}`)?.classList.remove('hidden'); if(step===3) loadAvailableStaff(); if(step===4) loadTimeSlots(); }
   function prevStep(step){ $$('.booking-step').forEach(s=>s.classList.add('hidden')); document.getElementById(`step${step}`)?.classList.remove('hidden'); }
 
-  /* ===== الموظفون – كروت كبيرة (موبايل/دسكتوب) ===== */
+  /* ===== الموظفون (حسب خطة دوام اليوم المختار) ===== */
   async function loadAvailableStaff(){
     const container = $('#staffList'); if(!container) return;
-    const { data, error } = await supabase.from('staff').select('*');
+    if (!selectedDate){ container.innerHTML='<p class="text-center text-gray-500">اختر التاريخ أولاً</p>'; return; }
+    const wd = weekdayIndex(selectedDate);
+
+    // 1) نجيب جداول العمل الفعّالة لليوم المختار
+    const { data: sch, error: schErr } = await supabase
+      .from('staff_schedule')
+      .select('staff_id')
+      .eq('weekday', wd)
+      .eq('active', true);
+    if (schErr){ console.error(schErr); container.innerHTML='<p class="text-center text-red-600">تعذر تحميل الموظفين</p>'; return; }
+    const ids = [...new Set((sch||[]).map(s=>s.staff_id))];
+    if (!ids.length){ container.innerHTML='<p class="text-center text-gray-500">لا يوجد موظفون متاحون في هذا اليوم</p>'; return; }
+
+    // 2) نجيب بيانات الموظفين الفعّالين
+    const { data, error } = await supabase.from('staff').select('*').in('id', ids).eq('active', true);
     if (error){ console.error(error); container.innerHTML='<p class="text-center text-red-600">تعذر تحميل الموظفين</p>'; return; }
-    const list = (data||[]).filter(r => (typeof r.active==='boolean'?r.active:true));
+    const list = (data||[]);
     if (!list.length){ container.innerHTML='<p class="text-center text-gray-500">لا يوجد موظفون متاحون</p>'; return; }
 
     container.innerHTML = list
@@ -642,6 +653,7 @@
   }
 
   /* ===== المواعيد ===== */
+  function toBusy(windowRows){ return (windowRows||[]).map(b=>[toMinutes(b.booking_time), toMinutes(b.booking_time)+(b.total_duration||0)]); }
   async function loadTimeSlots(){
     const container=$('#timeSlots'); if(!container) return;
     container.innerHTML='...';
@@ -651,7 +663,7 @@
     const { data: sch } = await supabase.from('staff_schedule').select('start_time, end_time, active').eq('staff_id', selectedStaff).eq('weekday', wd).maybeSingle();
     if(!sch || sch.active===false){ container.innerHTML='<p class="text-center text-gray-500 col-span-full">لا يوجد دوام في هذا اليوم</p>'; return; }
     const { data: exists } = await supabase.from('bookings').select('booking_time, total_duration, status').eq('staff_id', selectedStaff).eq('booking_date', selectedDate).in('status',['pending','confirmed']);
-    const busy = (exists||[]).map(b=>[toMinutes(b.booking_time), toMinutes(b.booking_time)+(b.total_duration||0)]);
+    const busy = toBusy(exists);
     const dayStart=toMinutes(sch.start_time), dayEnd=toMinutes(sch.end_time), step=30, slots=[];
     for(let t=dayStart; t+needMin<=dayEnd; t+=step){ const s=t,e=t+needMin; const overlap=busy.some(([bs,be]) => !(e<=bs || s>=be)); if(!overlap) slots.push(minutesToHHMM(t)); }
     if(!slots.length) { container.innerHTML='<p class="col-span-full text-center text-gray-500">لا توجد مواعيد متاحة لهذه المدة</p>'; return; }
@@ -696,8 +708,15 @@
     QRCode.toCanvas(document.getElementById(`qr-${bookingId}`), token, { width: 120, height: 120 });
     const modal = document.getElementById('receiptModal'); modal?.classList.remove('hidden'); modal?.classList.add('flex');
   }
+  function printReceipt(){ window.print(); }
+  function downloadReceipt(){
+    const el = document.getElementById('receiptContent');
+    const blob = new Blob([`<html dir="rtl" lang="ar"><head><meta charset="utf-8"><title>إيصال</title></head><body>${el?.innerHTML||''}</body></html>`], {type:'text/html'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href=url; a.download='receipt.html'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  }
 
-  /* ===== لوحة التحكم / العدادات / لستة الحجوزات ===== */
+  /* ===== لوحة التحكم / العدادات ===== */
   async function refreshDashboard(){ if(!currentUser) return; await loadBookings(); await loadCounters(); }
   async function loadBookings(){
     const { data, error } = await supabase.from('bookings').select('id, booking_code, booking_date, booking_time, status, total_price_egp, staff:staff_id(full_name)').eq('customer_id', currentUser.id).order('created_at',{ascending:false});
@@ -732,11 +751,34 @@
     const open=bookings.filter(b=>b.status==='pending'||b.status==='confirmed').length, done=bookings.filter(b=>b.status==='completed').length, canc=bookings.filter(b=>b.status==='cancelled').length;
     updateBookingCountsUI(open,done,canc);
   }
+  function viewBookingDetails(id){
+    const b=bookings.find(x=>x.id===id); if(!b) return;
+    const details=document.getElementById('bookingDetails'); if(!details) return;
+    details.innerHTML=`<div class="space-y-4">
+      <div class="text-center pb-4 border-b">
+        <h4 class="text-lg font-bold">حجز #${b.code}</h4>
+        <span class="inline-block px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 mt-2">${arabicStatus(b.status)}</span>
+      </div>
+      <div><h5 class="font-semibold mb-2">الخدمات:</h5>${(b.services||[]).map(s=>`<div class="flex justify-between py-1"><span>${s.name}</span><span>${s.price||''} ج.م</span></div>`).join('')||'<p class="text-gray-500">—</p>'}</div>
+      <div class="grid grid-cols-2 gap-4 text-sm">
+        <div><span class="text-gray-600">التاريخ:</span><p class="font-medium">${b.date}</p></div>
+        <div><span class="text-gray-600">الوقت:</span><p class="font-medium">${b.time}</p></div>
+        <div><span class="text-gray-600">الموظف:</span><p class="font-medium">${b.staff.name}</p></div>
+        <div><span class="text-gray-600">الإجمالي:</span><p class="font-medium text-[var(--brand)]">${b.totalPrice} ج.م</p></div>
+      </div></div>`;
+    const modal=document.getElementById('bookingModal'); modal?.classList.remove('hidden'); modal?.classList.add('flex');
+  }
   function updateBookingCountsUI(open,done,canc){ $('#openBookingsCount').textContent=open; $('#completedBookingsCount').textContent=done; $('#cancelledBookingsCount').textContent=canc; }
   async function loadCounters(){ const { data } = await supabase.from('v_customer_booking_counts').select('*').eq('customer_id', currentUser.id).maybeSingle(); if(data) updateBookingCountsUI(data.open_count||0, data.completed_count||0, data.cancelled_count||0); }
+  async function cancelBooking(id){
+    if(!confirm('هل أنت متأكد من إلغاء هذا الحجز؟')) return;
+    const { error } = await supabase.from('bookings').update({status:'cancelled', cancelled_at:new Date().toISOString()}).eq('id', id);
+    if(error) return showNotification('تعذر إلغاء الحجز','error');
+    showNotification('تم إلغاء الحجز بنجاح','success'); await refreshDashboard();
+  }
 
   /* ===== العروض ===== */
-  async function loadBestOffers(){ // الرئيسية (3 كروت)
+  async function loadBestOffers(){ // الرئيسية
     const today = new Date().toISOString().split('T')[0];
     const { data, error } = await supabase
       .from('offers')
@@ -781,24 +823,39 @@
       </div>`).join('');
   }
 
-  /* ===== الملف الشخصي ===== */
-  async function updateProfile(){
+  /* ===== تقييمات ===== */
+  function rateBooking(id){
+    currentBookingId=id; currentRating=0;
+    const t=document.getElementById('ratingComment'); if (t) t.value='';
+    $$('.star-btn').forEach(btn=>{btn.classList.remove('text-yellow-400');btn.classList.add('text-gray-300');});
+    const m=document.getElementById('ratingModal'); m?.classList.remove('hidden'); m?.classList.add('flex');
+  }
+  function setRating(r){
+    currentRating=r;
+    $$('.star-btn').forEach((btn,idx)=>{ if(idx<r){btn.classList.remove('text-gray-300');btn.classList.add('text-yellow-400');} else {btn.classList.remove('text-yellow-400');btn.classList.add('text-gray-300');} });
+  }
+  async function submitRating(){
+    if(!currentRating) return showNotification('يرجى اختيار عدد النجوم أولاً','warning');
+    if(!currentUser||!currentBookingId) return showNotification('لا يوجد حجز محدد','error');
     try{
-      const full = $('#profileName')?.value?.trim() || '';
-      const phone = $('#profilePhone')?.value?.trim() || '';
-      const { error } = await supabase.from('customers').update({ full_name: full, phone }).eq('id', currentUser.id);
+      const { data: chkBook, error: chkErr } = await supabase.from('bookings').select('id, customer_id, status').eq('id', currentBookingId).maybeSingle();
+      if (chkErr) return showNotification('تعذر التحقق من الحجز', 'error');
+      if (!chkBook || chkBook.customer_id !== currentUser.id) return showNotification('لا يمكنك تقييم حجز لا يخصك', 'error');
+      if (chkBook.status !== 'completed') return showNotification('يمكن تقييم الحجوزات المكتملة فقط', 'warning');
+    }catch(e){ console.error('pre-check failed', e); return showNotification('تعذر التحقق من الحجز', 'error'); }
+    const comment = document.getElementById('ratingComment')?.value?.trim() || null;
+    try{
+      const { error } = await supabase.from('ratings').insert({ booking_id:  currentBookingId, customer_id: currentUser.id, stars: currentRating, comment }).select().single();
       if (error) throw error;
-      currentUser.full_name=full; currentUser.phone=phone;
-      $('#userName').textContent = full || authUser?.email || 'مستخدم';
-      showNotification('تم حفظ التغييرات','success');
-    }catch(e){ console.error(e); showNotification('تعذر حفظ الملف الشخصي','error'); }
+      closeModal('ratingModal'); showNotification('شكراً لك! تم إرسال التقييم','success'); await refreshDashboard();
+    }catch(e){ console.error('submitRating error:', e); showNotification('تعذر إرسال التقييم: ' + (e.message||''), 'error'); }
   }
 
-  /* ===== إدارة (جزء الصور والبنرات كما هو) ===== */
+  /* ===== إدارة (ستاف + بنرات) ===== */
   async function renderAdminPanels(){
     if (!currentUser?.is_admin) return;
     const { data: staff } = await supabase.from('staff').select('id, full_name, avatar_url, avatar_emoji, experience_years').order('full_name');
-    const sWrap = $('#adminStaffList');
+    const sWrap = document.getElementById('adminStaffList');
     if (sWrap) {
       sWrap.innerHTML = (staff||[]).map(st => `
         <div class="border rounded-xl p-3 flex items-center gap-3">
@@ -808,8 +865,9 @@
           <button class="px-3 py-1.5 rounded-lg bg-gradient-to-l from-[var(--brand)] to-[var(--brand-2)] text-white text-xs" onclick="adminUploadStaffAvatar('${st.id}')">رفع صورة</button>
         </div>`).join('') || '<p class="text-gray-500">لا يوجد موظفون.</p>';
     }
+
     const { data: banners } = await supabase.from('banners').select('*').order('position');
-    const bWrap = $('#adminBannersList'); if (bWrap) {
+    const bWrap = document.getElementById('adminBannersList'); if (bWrap) {
       bWrap.innerHTML = (banners||[]).map(b=>`
         <div class="border rounded-xl p-3 flex items-center gap-3">
           <img src="${b.image_url}" class="w-20 h-12 object-cover rounded-lg border" alt="">
@@ -841,11 +899,39 @@
       showNotification('تم رفع الصورة','success'); await renderAdminPanels();
     }catch(e){ console.error(e); showNotification('فشل رفع الصورة','error'); }
   }
-  async function adminAddBanner(){ /* كما كان */ }
-  async function adminUpdateBanner(id){ /* كما كان */ }
-  async function adminDeleteBanner(id){ /* كما كان */ }
+  async function adminAddBanner(){
+    try{
+      const f=document.getElementById('bannerFile'); if(!f?.files?.length) return showNotification('اختر صورة للبنر','warning');
+      const url=await uploadPublicFile(BANNERS_BUCKET, f.files[0], '');
+      const title=document.getElementById('bannerTitle')?.value?.trim()||null;
+      const link=document.getElementById('bannerLink')?.value?.trim()||null;
+      const { error }=await supabase.from('banners').insert({ image_url:url, title, link_url:link, active:true, position:0 });
+      if(error) throw error;
+      document.getElementById('bannerTitle').value=''; document.getElementById('bannerLink').value=''; f.value='';
+      showNotification('تم إضافة البنر','success'); await loadBannersFromDB(); await renderAdminPanels();
+    }catch(e){ console.error(e); showNotification('فشل إضافة البنر','error'); }
+  }
+  async function adminUpdateBanner(id){
+    try{
+      const title=document.getElementById(`b-title-${id}`)?.value?.trim()||null;
+      const link=document.getElementById(`b-link-${id}`)?.value?.trim()||null;
+      const active=document.getElementById(`b-active-${id}`)?.checked||false;
+      const pos=Number(document.getElementById(`b-pos-${id}`)?.value||0);
+      const { error }=await supabase.from('banners').update({ title, link_url:link, active, position:pos }).eq('id', id);
+      if(error) throw error;
+      showNotification('تم حفظ التعديلات','success'); await loadBannersFromDB();
+    }catch(e){ console.error(e); showNotification('تعذر الحفظ','error'); }
+  }
+  async function adminDeleteBanner(id){
+    if(!confirm('حذف هذا البنر نهائيًا؟')) return;
+    try{
+      const { error } = await supabase.from('banners').delete().eq('id', id);
+      if(error) throw error;
+      showNotification('تم حذف البنر','success'); await loadBannersFromDB(); await renderAdminPanels();
+    }catch(e){ console.error(e); showNotification('تعذر الحذف','error'); }
+  }
 
-  /* ===== بنرات ===== */
+  /* ===== بنرات (سلايدر) ===== */
   async function loadBannersFromDB(){
     const wrap = document.getElementById('bannersSwiperWrapper'); if (!wrap) return;
     const { data } = await supabase.from('banners').select('id, image_url, title, link_url').eq('active', true).order('position');
@@ -871,7 +957,7 @@
     const map={all:0,pending:1,confirmed:2,completed:3,cancelled:4}; const idx=map[status]; if (btns[idx]) btns[idx].classList.add('bg-purple-100','text-[var(--brand)]');
   }
 
-  /* ===== إشعارات/توستات ===== */
+  /* ===== أدوات عامة ===== */
   function closeModal(id){ const m=document.getElementById(id); m?.classList.add('hidden'); m?.classList.remove('flex'); }
   function showNotification(message,type='info'){
     const container=document.getElementById('notifications'); if(!container) return;
@@ -880,14 +966,12 @@
     div.innerHTML=`<div class="flex items-center justify-between gap-4"><span>${message}</span><button onclick="this.closest('.notification').remove()" class="text-white/90 hover:text-white"><i class="fa-solid fa-xmark"></i></button></div>`;
     container.appendChild(div); setTimeout(()=>{ if(div.parentElement) div.remove(); }, 4500);
   }
-
-  // دوال التقييم/الإلغاء/التفاصيل كما كانت (موجودة مسبقًا)
-  function viewBookingDetails(id){ /* نفس النسخة السابقة */ }
-  function rateBooking(id){ currentBookingId=id; currentRating=0; const t=$('#ratingComment'); if (t) t.value=''; $$('.star-btn').forEach(btn=>{btn.classList.remove('text-yellow-400');btn.classList.add('text-gray-300');}); const m=$('#ratingModal'); m?.classList.remove('hidden'); m?.classList.add('flex'); }
-  function setRating(r){ currentRating=r; $$('.star-btn').forEach((btn,idx)=>{ if(idx<r){btn.classList.remove('text-gray-300');btn.classList.add('text-yellow-400');} else {btn.classList.remove('text-yellow-400');btn.classList.add('text-gray-300');} }); }
-  async function submitRating(){ /* استخدم النسخة المفصلة اللي أرسلتها لك قبل كده */ }
-  async function cancelBooking(id){ if(!confirm('هل أنت متأكد من إلغاء هذا الحجز؟')) return; const { error } = await supabase.from('bookings').update({status:'cancelled', cancelled_at:new Date().toISOString()}).eq('id', id); if(error) return showNotification('تعذر إلغاء الحجز','error'); showNotification('تم الإلغاء','success'); await refreshDashboard(); }
-
   </script>
+
+  <!--
+  ملاحظة سريعة:
+  - شغّل سكربت SQL النهائي الذي أنشأ جدول offers والـbucket وسياسات التخزين.
+  - عدّل SUPABASE_URL و SUPABASE_ANON_KEY أعلاه.
+  -->
 </body>
 </html>
