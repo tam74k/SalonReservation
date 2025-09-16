@@ -22,11 +22,14 @@
       --ink:#0f172a;
       --card:#ffffffcc;
       --bg-grad: linear-gradient(135deg,#faf5ff 0%, #fff7ed 100%);
+      /* NEW: لضبط مساحة أسفل الصفحة مع شريط التنقل السفلي */
+      --bottom-nav-h: 72px;   /* الارتفاع التقريبي للـBottom Nav */
+      --fab-size: 56px;       /* قطر زر الحجز الطافي */
     }
     body{ font-family:'Cairo',sans-serif; background:var(--bg-grad); color:var(--ink) }
     .container-narrow{ max-width:1120px; margin:0 auto; }
     .glass{ background:var(--card); backdrop-filter: blur(10px); }
-    .tab-content{ animation:fade .2s ease }
+    .tab-content{ animation:fade .2s ease; padding-bottom: 48px; }
     @keyframes fade{ from{opacity:.6;transform:translateY(6px)} to{opacity:1;transform:none} }
     .auth-hero{
       background: radial-gradient(1200px 600px at 90% -10%, rgba(139,92,246,.35), rgba(236,72,153,.25), transparent),
@@ -40,8 +43,16 @@
     .staff-card{ transition:.2s; border-width:2px; }
     .staff-card:hover{ border-color: var(--brand); background:#f5f3ff; }
 
-    /* مساحة أسفل المحتوى بسبب شريط التنقل السفلي + الزر الطافي */
-    main{ padding-bottom: 120px; }
+    /* NEW: مساحة أسفل المحتوى لحماية العناصر من التغطية بالـBottom Nav */
+    main{
+      padding-bottom: calc(var(--bottom-nav-h) + var(--fab-size) + env(safe-area-inset-bottom) + 64px);
+    }
+    /* NEW: تبويبي الحجز وحجوزاتي يحتاجوا مساحة أكبر */
+    #bookingTab,
+    #bookingsTab{
+      padding-bottom: calc(var(--bottom-nav-h) + var(--fab-size) + env(safe-area-inset-bottom) + 120px) !important;
+    }
+
     .bn-active{ color: var(--brand); }
   </style>
 </head>
@@ -268,7 +279,7 @@
             <div id="servicesList" class="space-y-2"></div>
           </div>
 
-          <div class="mt-6 flex justify-between">
+          <div class="mt-6 mb-28 flex justify-between">
             <span></span>
             <button id="step1Next" class="px-4 py-2 rounded-lg bg-gradient-to-l from-[var(--brand)] to-[var(--brand-2)] text-white disabled:opacity-40" disabled onclick="nextStep(2)">
               التالي <i class="fa-solid fa-arrow-left mr-2"></i>
@@ -279,7 +290,7 @@
         <div id="step2" class="booking-step hidden">
           <div class="mb-4"><h3 class="text-xl font-bold text-slate-900">2) اختر التاريخ</h3></div>
           <input id="bookingDate" type="date" class="rounded-xl border-gray-300 focus:border-[var(--brand)] focus:ring-[var(--brand)] bg-white p-2" />
-          <div class="mt-6 flex justify-between">
+          <div class="mt-6 mb-28 flex justify-between">
             <button class="px-4 py-2 rounded-lg border" onclick="prevStep(1)"><i class="fa-solid fa-arrow-right ml-2"></i> رجوع</button>
             <button id="step2Next" class="px-4 py-2 rounded-lg bg-gradient-to-l from-[var(--brand)] to-[var(--brand-2)] text-white disabled:opacity-40" disabled onclick="nextStep(3)">
               التالي <i class="fa-solid fa-arrow-left mr-2"></i>
@@ -290,7 +301,7 @@
         <div id="step3" class="booking-step hidden">
           <div class="mb-4"><h3 class="text-xl font-bold text-slate-900">3) اختر الموظف</h3></div>
           <div id="staffList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-          <div class="mt-6 flex justify-between">
+          <div class="mt-6 mb-28 flex justify-between">
             <button class="px-4 py-2 rounded-lg border" onclick="prevStep(2)"><i class="fa-solid fa-arrow-right ml-2"></i> رجوع</button>
             <button id="step3Next" class="px-4 py-2 rounded-lg bg-gradient-to-l from-[var(--brand)] to-[var(--brand-2)] text-white disabled:opacity-40" disabled onclick="nextStep(4)">
               التالي <i class="fa-solid fa-arrow-left mr-2"></i>
@@ -301,7 +312,7 @@
         <div id="step4" class="booking-step hidden">
           <div class="mb-4"><h3 class="text-xl font-bold text-slate-900">4) اختر التوقيت</h3></div>
           <div id="timeSlots" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3"></div>
-          <div class="mt-6 flex justify-between">
+          <div class="mt-6 mb-28 flex justify-between">
             <button class="px-4 py-2 rounded-lg border" onclick="prevStep(3)"><i class="fa-solid fa-arrow-right ml-2"></i> رجوع</button>
             <button id="step4Next" class="px-4 py-2 rounded-lg bg-gradient-to-l from-[var(--brand)] to-[var(--brand-2)] text-white disabled:opacity-40" disabled onclick="confirmBooking()">
               تأكيد الحجز <i class="fa-solid fa-check mr-2"></i>
@@ -365,6 +376,9 @@
           </div>
         </div>
       </div>
+
+      <!-- NEW: Spacer لضمان ظهور آخر العناصر فوق الشريط السفلي -->
+      <div class="h-[160px]"></div>
     </main>
 
     <!-- زر حجز سريع ثابت (FAB) -->
@@ -1113,10 +1127,8 @@
   <!--
   ملاحظات:
   - عدّل SUPABASE_URL و SUPABASE_ANON_KEY أعلاه.
-  - تأكد من وجود جداول/سياسات:
-    customers (حقول: id PK, auth_user_id UUID, full_name, phone, is_admin bool ...)
-    services, staff, staff_schedule, bookings, booking_services, ratings, banners, offers, salon_info
-  - سياسات RLS لجدول customers يجب أن تسمح للمستخدم بقراءة/تحديث صفّه.
+  - تمت إضافة Padding سفلي ديناميكي وSpacer لضمان ظهور الأزرار والمحتوى فوق شريط التنقل السفلي.
+  - تأكد من وجود الجداول/السياسات طبقًا لملف SQL النهائي الذي أرسلته لك.
   -->
 </body>
 </html>
