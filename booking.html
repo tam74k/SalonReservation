@@ -506,6 +506,7 @@
         });
 
         // دالة الإرسال المطابقة للـ curl المطلوب
+       // دالة الإرسال المطابقة للـ curl المطلوب مع كشف الأخطاء
         async function sendWhatsApp(name, phone, date, time, services, price) {
             try {
                 // استبدال المتغيرات في الرسالة
@@ -518,8 +519,9 @@
                          .replace(/{currency}/g, salonCurrency);
 
                 let apiUrl = evoSettings.url.endsWith('/') ? evoSettings.url.slice(0, -1) : evoSettings.url;
+                let fullEndpoint = `${apiUrl}/message/sendText/${evoSettings.instance}`;
                 
-                // تجهيز الـ JSON بنفس الهيكلية المطلوبة
+                // تجهيز الـ JSON
                 const payload = {
                     "number": phone,
                     "textMessage": {
@@ -529,8 +531,11 @@
                     "linkPreview": true
                 };
 
+                console.log("جاري الإرسال إلى:", fullEndpoint);
+                console.log("البيانات المرسلة:", payload);
+
                 // إرسال الطلب
-                await fetch(`${apiUrl}/message/sendText/${evoSettings.instance}`, {
+                const response = await fetch(fullEndpoint, {
                     method: 'POST',
                     headers: { 
                         'Content-Type': 'application/json', 
@@ -538,8 +543,20 @@
                     },
                     body: JSON.stringify(payload)
                 });
+
+                const responseData = await response.json();
+                console.log("رد السيرفر:", responseData);
+
+                if (!response.ok) {
+                    throw new Error(`خطأ من السيرفر: ${response.status} - ${JSON.stringify(responseData)}`);
+                }
+
+                console.log("تم الإرسال بنجاح!");
+
             } catch (e) {
-                console.error("WhatsApp API Error:", e);
+                console.error("تفاصيل الخطأ:", e);
+                // إظهار الخطأ للعميل/المطور لمعرفة السبب
+                alert("لم يتم إرسال الواتساب. السبب: " + e.message + "\n\nرجاءً افتح الكونسول (F12) لمعرفة التفاصيل.");
             }
         }
     </script>
