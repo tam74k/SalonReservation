@@ -1,1204 +1,408 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="utf-8" />
-  <title>بيوتي بوك – حجوزات الصالون</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>صالون ومركز تجميل</title>
+    <!-- استدعاء خط Cairo -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- مكتبة Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <style>
+        /* ================= المتغيرات والألوان ================= */
+        :root {
+            --primary-gold: #D4AF37;
+            --soft-pink: #F8E7E9;
+            --dark-black: #1A1A1A;
+            --pure-white: #FFFFFF;
+            --text-gray: #4A4A4A;
+        }
 
-  <!-- Tailwind -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
-  <!-- Icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-  <!-- Swiper (Slider) -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.css"/>
-  <script src="https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.js"></script>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Cairo', sans-serif;
+        }
 
-  <style>
-    :root{
-      --brand:#8b5cf6;
-      --brand-2:#ec4899;
-      --ink:#0f172a;
-      --card:#ffffffcc;
-      --bg-grad: linear-gradient(135deg,#faf5ff 0%, #fff7ed 100%);
-      /* لضبط مساحة أسفل الصفحة مع شريط التنقل السفلي */
-      --bottom-nav-h: 72px;   /* الارتفاع التقريبي للـBottom Nav */
-      --fab-size: 56px;       /* قطر زر الحجز الطافي */
-    }
-    body{ font-family:'Cairo',sans-serif; background:var(--bg-grad); color:var(--ink) }
-    .container-narrow{ max-width:1120px; margin:0 auto; }
-    .glass{ background:var(--card); backdrop-filter: blur(10px); }
-    .tab-content{ animation:fade .2s ease; padding-bottom: 48px; }
-    @keyframes fade{ from{opacity:.6;transform:translateY(6px)} to{opacity:1;transform:none} }
-    .auth-hero{
-      background: radial-gradient(1200px 600px at 90% -10%, rgba(139,92,246,.35), rgba(236,72,153,.25), transparent),
-                  linear-gradient(135deg,#ede9fe 0%, #fff1f2 100%);
-    }
-    .input-pad{ padding-inline-start:.75rem; padding-inline-end:.75rem; }
-    .social a{ transition: .15s; }
-    .social a:hover{ opacity:.85; transform: translateY(-1px); }
+        body {
+            background-color: var(--soft-pink);
+            color: var(--dark-black);
+            overflow-x: hidden;
+        }
 
-    /* كروت الموظفين أكبر (موبايل) */
-    .staff-card{ transition:.2s; border-width:2px; }
-    .staff-card:hover{ border-color: var(--brand); background:#f5f3ff; }
+        /* ================= الحركات (Animations) ================= */
+        .fade-in { opacity: 0; transition: opacity 1s ease-in; }
+        .fade-in.visible { opacity: 1; }
+        .slide-up { opacity: 0; transform: translateY(30px); transition: all 0.8s ease-out; }
+        .slide-up.visible { opacity: 1; transform: translateY(0); }
 
-    /* مساحة أسفل المحتوى لحماية العناصر من التغطية بالـBottom Nav */
-    main{
-      padding-bottom: calc(var(--bottom-nav-h) + var(--fab-size) + env(safe-area-inset-bottom) + 64px);
-    }
-    /* تبويبي الحجز وحجوزاتي يحتاجوا مساحة أكبر */
-    #bookingTab,
-    #bookingsTab{
-      padding-bottom: calc(var(--bottom-nav-h) + var(--fab-size) + env(safe-area-inset-bottom) + 120px) !important;
-    }
+        /* ================= الهيدر (Header) ================= */
+        header {
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            padding: 20px 40px;
+            display: flex;
+            justify-content: center; /* توسيط الشعار */
+            align-items: center;
+            z-index: 10;
+        }
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            text-decoration: none;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px 20px;
+            border-radius: 30px;
+            backdrop-filter: blur(5px);
+        }
+        .logo-container img {
+            height: 45px;
+            width: auto;
+            border-radius: 50%; /* في حال كان الشعار مربعاً */
+        }
+        .logo-container h2 {
+            font-size: 1.5rem;
+            margin: 0;
+            color: var(--primary-gold);
+            font-weight: 700;
+        }
 
-    .bn-active{ color: var(--brand); }
+        /* ================= قسم البانر (Hero Section) ================= */
+        .hero {
+            height: 100vh;
+            background: linear-gradient(rgba(26, 26, 26, 0.7), rgba(26, 26, 26, 0.7)), url('https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=1920&q=80') center/cover;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: var(--pure-white);
+            padding: 20px;
+        }
 
-    /* تحسين بانل الإشعارات */
-    #notifyPanel{ box-shadow: 0 20px 40px rgba(15, 23, 42, .15); }
-  </style>
+        .hero h1 {
+            font-size: 3rem;
+            color: var(--primary-gold);
+            margin-bottom: 15px;
+            font-weight: 700;
+        }
+
+        .hero p { 
+            font-size: 1.2rem; 
+            margin-bottom: 30px; 
+            font-weight: 300; 
+            max-width: 600px;
+        }
+
+        /* ================= الأقسام العامة ================= */
+        section { padding: 80px 20px; text-align: center; }
+        section h2 { color: var(--primary-gold); margin-bottom: 20px; font-size: 2rem; }
+        section p { color: var(--text-gray); line-height: 1.8; margin-bottom: 30px; max-width: 800px; margin-inline: auto;}
+
+        /* ================= قسم التواصل والخريطة ================= */
+        .contact-section {
+            background-color: var(--pure-white);
+        }
+        .contact-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            max-width: 1000px;
+            margin: 0 auto;
+            text-align: right;
+            margin-top: 40px;
+        }
+        .contact-info {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 25px;
+            background: var(--soft-pink);
+            padding: 30px;
+            border-radius: 20px;
+        }
+        .contact-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 1.1rem;
+            color: var(--dark-black);
+            font-weight: 600;
+        }
+        .contact-item i {
+            font-style: normal;
+            font-size: 1.5rem;
+        }
+        .map-container {
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            height: 350px;
+            width: 100%;
+        }
+        .map-container iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        /* ================= الفوتر (Footer) ================= */
+        footer {
+            background-color: var(--dark-black);
+            color: var(--pure-white);
+            padding: 60px 20px 100px; /* زيادة الحشو السفلي بسبب الأزرار العائمة */
+            text-align: center;
+        }
+        .footer-content {
+            max-width: 800px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+        .footer-logo {
+            height: 70px;
+            filter: brightness(0) invert(1); /* جعل الشعار أبيض */
+        }
+        .social-links {
+            display: flex;
+            gap: 20px;
+            margin-top: 15px;
+        }
+        .social-links a {
+            color: var(--primary-gold);
+            text-decoration: none;
+            font-size: 1.1rem;
+            transition: color 0.3s ease;
+            font-weight: 600;
+        }
+        .social-links a:hover {
+            color: var(--pure-white);
+        }
+        .copyright {
+            margin-top: 30px;
+            font-size: 0.9rem;
+            color: #888;
+            border-top: 1px solid #333;
+            padding-top: 20px;
+            width: 100%;
+        }
+
+        /* ================= الأزرار العائمة ================= */
+        .cta-container {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+            z-index: 1000;
+            width: 90%;
+            max-width: 400px;
+        }
+        .btn {
+            flex: 1;
+            padding: 15px;
+            border-radius: 30px;
+            text-align: center;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            transition: transform 0.3s ease;
+        }
+        .btn:active { transform: scale(0.95); }
+        .btn-book {
+            background-color: var(--primary-gold);
+            color: var(--pure-white);
+        }
+        .btn-whatsapp {
+            background-color: #25D366; 
+            color: var(--pure-white);
+        }
+
+        /* ================= التجاوب (Responsive) ================= */
+        @media (max-width: 768px) {
+            .contact-grid { grid-template-columns: 1fr; }
+            .hero h1 { font-size: 2.2rem; }
+            header { padding: 15px 20px; }
+        }
+    </style>
 </head>
-<body class="min-h-screen">
+<body>
 
-  <!-- إشعارات Toast -->
-  <div id="notifications" class="fixed top-4 left-4 z-50 space-y-3"></div>
-
-  <!-- ============= شاشة تسجيل الدخول ============= -->
-  <section id="loginScreen" class="min-h-screen grid place-items-center p-6">
-    <div class="w-full max-w-5xl rounded-3xl overflow-hidden shadow-2xl border">
-      <div class="grid md:grid-cols-2">
-        <!-- شعار + اسم -->
-        <div class="auth-hero relative p-8 md:p-12 grid place-items-center">
-          <div class="text-center">
-            <img id="salonLogoLogin" src="" alt="شعار الصالون"
-                 class="w-40 h-40 object-contain rounded-2xl shadow-xl bg-white p-4">
-            <div id="salonNameLogin" class="mt-4 text-2xl md:text-3xl font-extrabold text-slate-900">بيوتي بوك</div>
-          </div>
-        </div>
-        <!-- فورم الدخول -->
-        <div class="p-8 md:p-12 bg-white">
-          <h2 class="text-xl font-bold text-slate-900 mb-6">تسجيل الدخول</h2>
-          <div class="space-y-4">
-            <label class="block">
-              <span class="text-sm text-gray-700">البريد الإلكتروني</span>
-              <input id="loginEmail" type="email" class="mt-1 w-full rounded-xl border-gray-300 focus:border-[var(--brand)] focus:ring-[var(--brand)] input-pad py-2" placeholder="you@example.com">
-            </label>
-            <label class="block">
-              <span class="text-sm text-gray-700">كلمة المرور</span>
-              <input id="loginPassword" type="password" class="mt-1 w-full rounded-xl border-gray-300 focus:border-[var(--brand)] focus:ring-[var(--brand)] input-pad py-2" placeholder="••••••••">
-            </label>
-            <button id="loginBtn" type="button" class="w-full rounded-xl bg-gradient-to-l from-[var(--brand)] to-[var(--brand-2)] text-white font-semibold py-3 shadow-md hover:opacity-95">
-              دخول <i class="fa-solid fa-arrow-right-to-bracket mr-2"></i>
-            </button>
-          </div>
-          <div class="text-center mt-6 text-sm text-gray-600">
-            ما عندكش حساب؟ <button class="text-[var(--brand)] font-bold" onclick="showSignup()">إنشاء حساب جديد</button>
-          </div>
-          <div class="social flex gap-3 justify-center mt-4 text-xl" id="loginSocial"></div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============= شاشة إنشاء حساب ============= -->
-  <section id="signupScreen" class="min-h-screen grid place-items-center p-6 hidden">
-    <div class="w-full max-w-5xl rounded-3xl overflow-hidden shadow-2xl border">
-      <div class="grid md:grid-cols-2">
-        <!-- شعار + اسم -->
-        <div class="auth-hero relative p-8 md:p-12 grid place-items-center">
-          <div class="text-center">
-            <img id="salonLogoSignup" src="" alt="شعار الصالون"
-                 class="w-40 h-40 object-contain rounded-2xl shadow-xl bg-white p-4">
-            <div id="salonNameSignup" class="mt-4 text-2xl md:text-3xl font-extrabold text-slate-900">بيوتي بوك</div>
-          </div>
-        </div>
-        <!-- فورم التسجيل -->
-        <div class="p-8 md:p-12 bg-white">
-          <h2 class="text-xl font-bold text-slate-900 mb-6">إنشاء حساب</h2>
-          <div class="space-y-4">
-            <label class="block">
-              <span class="text-sm text-gray-700">البريد الإلكتروني</span>
-              <input id="signupEmail" type="email" class="mt-1 w-full rounded-xl border-gray-300 focus:border-[var(--brand)] focus:ring-[var(--brand)] input-pad py-2" placeholder="you@example.com">
-            </label>
-            <label class="block">
-              <span class="text-sm text-gray-700">اسم العميل</span>
-              <input id="signupFullName" type="text" class="mt-1 w-full rounded-xl border-gray-300 focus:border-[var(--brand)] focus:ring-[var(--brand)] input-pad py-2" placeholder="محمد أحمد">
-            </label>
-            <label class="block">
-              <span class="text-sm text-gray-700">رقم الموبايل</span>
-              <input id="signupPhone" type="tel" class="mt-1 w-full rounded-xl border-gray-300 focus:border-[var(--brand)] focus:ring-[var(--brand)] input-pad py-2" placeholder="01xxxxxxxxx">
-            </label>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <label class="block">
-                <span class="text-sm text-gray-700">كلمة المرور</span>
-                <input id="signupPassword" type="password" class="mt-1 w-full rounded-xl border-gray-300 focus:border-[var(--brand)] focus:ring-[var(--brand)] input-pad py-2" placeholder="••••••••">
-              </label>
-              <label class="block">
-                <span class="text-sm text-gray-700">تأكيد كلمة المرور</span>
-                <input id="signupPasswordConfirm" type="password" class="mt-1 w-full rounded-xl border-gray-300 focus:border-[var(--brand)] focus:ring-[var(--brand)] input-pad py-2" placeholder="••••••••">
-              </label>
-            </div>
-            <button id="signupBtn" type="button" class="w-full rounded-xl bg-gradient-to-l from-[var(--brand)] to-[var(--brand-2)] text-white font-semibold py-3 shadow-md hover:opacity-95">
-              إنشاء الحساب <i class="fa-solid fa-user-check mr-2"></i>
-            </button>
-          </div>
-          <div class="text-center mt-6 text-sm text-gray-600">
-            عندك حساب؟ <button class="text-[var(--brand)] font-bold" onclick="showLogin()">سجّل الدخول</button>
-          </div>
-          <div class="social flex gap-3 justify-center mt-4 text-xl" id="signupSocial"></div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============= التطبيق ============= -->
-  <section id="mainApp" class="hidden">
-    <!-- HEADER المعدل: زر الإشعارات أقصى اليسار، والبانل يفتح يمينه -->
-    <header class="bg-white/80 backdrop-blur sticky top-0 z-30 border-b">
-      <div class="container-narrow px-4 py-3 grid grid-cols-[auto_1fr_auto] items-center gap-3">
-        <!-- يسار: الإشعارات -->
-        <div class="relative justify-self-start">
-          <button id="notifyBtn" type="button"
-                  class="relative px-3 py-1.5 rounded-lg border text-sm flex items-center gap-2">
-            <i class="fa-regular fa-bell"></i>
-            <span class="sr-only">الإشعارات</span>
-            <span id="notifyBadge"
-                  class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] px-1.5 rounded-full hidden">0</span>
-          </button>
-          <div id="notifyPanel"
-               class="hidden absolute left-0 right-auto mt-2 w-72 sm:w-80 max-w-[92vw] max-h-80 overflow-auto bg-white border rounded-xl shadow-xl z-50 p-2">
-            <div id="notifyList" class="space-y-2 text-sm"></div>
-          </div>
-        </div>
-
-        <!-- وسط: الشعار والاسم -->
-        <div class="flex items-center gap-3 justify-self-center">
-          <img id="salonLogoSmall" src="" class="w-10 h-10 rounded-xl object-cover border" alt="logo">
-          <div>
-            <h2 id="brandName" class="text-lg font-extrabold text-slate-900">بيوتي بوك</h2>
-            <p class="text-xs text-gray-500">مرحبًا، <span id="userName">ضيف</span></p>
-          </div>
-        </div>
-
-        <!-- يمين: سوشيال + إدارة + خروج -->
-        <div class="flex items-center gap-2 justify-self-end">
-          <div class="social flex gap-3 text-lg" id="appSocial"></div>
-          <button id="adminBtn" type="button" class="hidden px-3 py-1.5 rounded-lg border text-sm" onclick="showTab('admin')">الإدارة</button>
-          <button id="logoutBtn" type="button" class="px-3 py-1.5 rounded-lg border text-sm">خروج</button>
-        </div>
-      </div>
+    <!-- ================= الهيدر ================= -->
+    <header class="fade-in">
+        <a href="#" class="logo-container">
+            <img id="dynamic-logo" src="" alt="شعار الصالون" style="display: none;">
+            <h2 id="dynamic-header-name">جاري التحميل...</h2>
+        </a>
     </header>
 
-    <main class="container-narrow px-4 py-6 space-y-8">
-      <!-- سلايدر بنرات -->
-      <div id="bannersArea" class="tab-content">
-        <div class="glass rounded-2xl border overflow-hidden">
-          <div class="swiper" dir="rtl">
-            <div class="swiper-wrapper" id="bannersSwiperWrapper"></div>
-            <div class="swiper-pagination"></div>
-            <div class="swiper-button-prev"></div>
-            <div class="swiper-button-next"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- الرئيسية -->
-      <div id="homeTab" class="tab-content">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div class="p-4 rounded-2xl border glass">
-            <div class="flex items-center justify-between">
-              <div><p class="text-sm text-gray-500">حجوزات مفتوحة</p><p id="openBookingsCount" class="text-2xl font-extrabold text-[var(--brand)]">0</p></div>
-              <span class="w-10 h-10 rounded-xl bg-purple-100 text-[var(--brand)] grid place-items-center"><i class="fa-regular fa-calendar-check"></i></span>
-            </div>
-          </div>
-          <div class="p-4 rounded-2xl border glass">
-            <div class="flex items-center justify-between">
-              <div><p class="text-sm text-gray-500">مكتملة</p><p id="completedBookingsCount" class="text-2xl font-extrabold text-green-600">0</p></div>
-              <span class="w-10 h-10 rounded-xl bg-green-100 text-green-600 grid place-items-center"><i class="fa-solid fa-check"></i></span>
-            </div>
-          </div>
-          <div class="p-4 rounded-2xl border glass">
-            <div class="flex items-center justify-between">
-              <div><p class="text-sm text-gray-500">ملغية</p><p id="cancelledBookingsCount" class="text-2xl font-extrabold text-red-600">0</p></div>
-              <span class="w-10 h-10 rounded-xl bg-red-100 text-red-600 grid place-items-center"><i class="fa-solid fa-xmark"></i></span>
-            </div>
-          </div>
-        </div>
-
-        <!-- أفضل العروض -->
-        <div class="mt-6">
-          <div class="flex items-center justify-between mb-3">
-            <h3 class="text-xl font-bold text-slate-900">أفضل العروض</h3>
-            <button class="text-[var(--brand)]" onclick="showTab('offers')">عرض الكل</button>
-          </div>
-        </div>
-        <div id="bestOffers" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-
-        <!-- CTA لحجز جديد -->
-        <div class="mt-6">
-          <button class="px-5 py-3 rounded-xl bg-gradient-to-l from-[var(--brand)] to-[var(--brand-2)] text-white font-semibold"
-                  onclick="showBookingWizard()">
-            + حجز جديد
-          </button>
-        </div>
-      </div>
-
-      <!-- تبويب العروض -->
-      <div id="offersTab" class="tab-content hidden">
-        <div class="flex items-center justify-between mb-3">
-          <h3 class="text-xl font-bold">العروض المتاحة</h3>
-        </div>
-        <div id="offersList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-      </div>
-
-      <!-- تبويب الحجوزات -->
-      <div id="bookingsTab" class="tab-content hidden">
-        <div class="flex gap-2">
-          <button class="filter-btn px-3 py-1.5 rounded-lg bg-purple-100 text-[var(--brand)]" onclick="filterBookings('all')">الكل</button>
-          <button class="filter-btn px-3 py-1.5 rounded-lg text-gray-600" onclick="filterBookings('pending')">قيد الانتظار</button>
-          <button class="filter-btn px-3 py-1.5 rounded-lg text-gray-600" onclick="filterBookings('confirmed')">مؤكد</button>
-          <button class="filter-btn px-3 py-1.5 rounded-lg text-gray-600" onclick="filterBookings('completed')">مكتمل</button>
-          <button class="filter-btn px-3 py-1.5 rounded-lg text-gray-600" onclick="filterBookings('cancelled')">ملغي</button>
-        </div>
-        <div id="bookingsList" class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4"></div>
-      </div>
-
-      <!-- معالج الحجز -->
-      <div id="bookingTab" class="tab-content hidden">
-        <div id="step1" class="booking-step">
-          <div class="mb-4">
-            <h3 class="text-xl font-bold text-slate-900">1) اختر الخدمات (حتى 3)</h3>
-            <p class="text-gray-600 text-sm">يتم تحميل الخدمات من قاعدة البيانات.</p>
-          </div>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
-
-          <div id="selectedServices" class="hidden mt-4 p-4 rounded-2xl glass border">
-            <div class="flex justify-between items-center mb-2">
-              <h4 class="font-semibold">الخدمات المختارة</h4>
-              <div class="text-sm text-gray-600">
-                <span>الإجمالي: <span id="totalPrice" class="text-[var(--brand)] font-bold">0 ج.م</span></span>
-                <span class="mx-2">•</span>
-                <span>المدة: <span id="totalDuration" class="text-[var(--brand)] font-bold">0 دقيقة</span></span>
-              </div>
-            </div>
-            <div id="servicesList" class="space-y-2"></div>
-          </div>
-
-          <div class="mt-6 mb-28 flex justify-between">
-            <span></span>
-            <button id="step1Next" class="px-4 py-2 rounded-lg bg-gradient-to-l from-[var(--brand)] to-[var(--brand-2)] text-white disabled:opacity-40" disabled onclick="nextStep(2)">
-              التالي <i class="fa-solid fa-arrow-left mr-2"></i>
-            </button>
-          </div>
-        </div>
-
-        <div id="step2" class="booking-step hidden">
-          <div class="mb-4"><h3 class="text-xl font-bold text-slate-900">2) اختر التاريخ</h3></div>
-          <input id="bookingDate" type="date" class="rounded-xl border-gray-300 focus:border-[var(--brand)] focus:ring-[var(--brand)] bg-white p-2" />
-          <div class="mt-6 mb-28 flex justify-between">
-            <button class="px-4 py-2 rounded-lg border" onclick="prevStep(1)"><i class="fa-solid fa-arrow-right ml-2"></i> رجوع</button>
-            <button id="step2Next" class="px-4 py-2 rounded-lg bg-gradient-to-l from-[var(--brand)] to-[var(--brand-2)] text-white disabled:opacity-40" disabled onclick="nextStep(3)">
-              التالي <i class="fa-solid fa-arrow-left mr-2"></i>
-            </button>
-          </div>
-        </div>
-
-        <div id="step3" class="booking-step hidden">
-          <div class="mb-4"><h3 class="text-xl font-bold text-slate-900">3) اختر الموظف</h3></div>
-          <div id="staffList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-          <div class="mt-6 mb-28 flex justify-between">
-            <button class="px-4 py-2 rounded-lg border" onclick="prevStep(2)"><i class="fa-solid fa-arrow-right ml-2"></i> رجوع</button>
-            <button id="step3Next" class="px-4 py-2 rounded-lg bg-gradient-to-l from-[var(--brand)] to-[var(--brand-2)] text-white disabled:opacity-40" disabled onclick="nextStep(4)">
-              التالي <i class="fa-solid fa-arrow-left mr-2"></i>
-            </button>
-          </div>
-        </div>
-
-        <div id="step4" class="booking-step hidden">
-          <div class="mb-4"><h3 class="text-xl font-bold text-slate-900">4) اختر التوقيت</h3></div>
-          <div id="timeSlots" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3"></div>
-          <div class="mt-6 mb-28 flex justify-between">
-            <button class="px-4 py-2 rounded-lg border" onclick="prevStep(3)"><i class="fa-solid fa-arrow-right ml-2"></i> رجوع</button>
-            <button id="step4Next" class="px-4 py-2 rounded-lg bg-gradient-to-l from-[var(--brand)] to-[var(--brand-2)] text-white disabled:opacity-40" disabled onclick="confirmBooking()">
-              تأكيد الحجز <i class="fa-solid fa-check mr-2"></i>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- الملف الشخصي -->
-      <div id="profileTab" class="tab-content hidden">
-        <div class="glass border rounded-2xl p-4 max-w-xl">
-          <h3 class="text-xl font-bold text-slate-900 mb-4">بياناتي</h3>
-          <div class="space-y-4">
-            <label class="block"><span class="text-sm text-gray-700">الاسم الكامل</span>
-              <input id="profileName" type="text" class="mt-1 w-full rounded-xl border-gray-300 focus:border-[var(--brand)] focus:ring-[var(--brand)] input-pad py-2">
-            </label>
-            <label class="block"><span class="text-sm text-gray-700">رقم الموبايل</span>
-              <input id="profilePhone" type="tel" class="mt-1 w-full rounded-xl border-gray-300 focus:border-[var(--brand)] focus:ring-[var(--brand)] input-pad py-2">
-            </label>
-            <label class="block"><span class="text-sm text-gray-700">البريد الإلكتروني</span>
-              <input id="profileEmail" type="email" class="mt-1 w-full rounded-xl border-gray-300 bg-gray-100 input-pad py-2" readonly>
-            </label>
-            <div class="pt-2">
-              <button id="profileSaveBtn" onclick="updateProfile()" class="px-4 py-2 rounded-xl bg-gradient-to-l from-[var(--brand)] to-[var(--brand-2)] text-white">حفظ التغييرات</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- الإدارة -->
-      <div id="adminTab" class="tab-content hidden">
-        <div class="grid md:grid-cols-2 gap-6">
-          <div class="glass border rounded-2xl p-4">
-            <div class="flex items-center justify-between mb-4">
-              <h3 class="text-lg font-bold">صور الموظفين</h3>
-              <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-[var(--brand)]">Admin</span>
-            </div>
-            <div id="adminStaffList" class="space-y-3 text-sm"></div>
-          </div>
-
-          <div class="glass border rounded-2xl p-4">
-            <div class="flex items-center justify-between mb-4">
-              <h3 class="text-lg font-bold">البنرات (السلايدر)</h3>
-              <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-pink-100 text-[var(--brand-2)]">Slider</span>
-            </div>
-
-            <div class="border-dashed border-2 rounded-xl p-3 mb-4">
-              <h4 class="font-semibold mb-2">إضافة بانر جديد</h4>
-              <div class="grid sm:grid-cols-2 gap-3">
-                <input id="bannerTitle" type="text" class="rounded-xl border-gray-300 input-pad py-2" placeholder="عنوان (اختياري)">
-                <input id="bannerLink" type="url" class="rounded-xl border-gray-300 input-pad py-2" placeholder="رابط (اختياري)">
-              </div>
-              <div class="mt-3 flex items-center gap-3">
-                <input id="bannerFile" type="file" accept="image/*" class="block w-full text-sm">
-                <button onclick="adminAddBanner()" class="px-4 py-2 rounded-xl bg-gradient-to-l from-[var(--brand)] to-[var(--brand-2)] text-white">رفع وحفظ</button>
-              </div>
-              <p class="text-xs text-gray-500 mt-2">Bucket: <code>banners</code>.</p>
-            </div>
-
-            <div id="adminBannersList" class="space-y-3 text-sm"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Spacer لضمان ظهور آخر العناصر فوق الشريط السفلي -->
-      <div class="h-[160px]"></div>
-    </main>
-
-    <!-- زر حجز سريع ثابت (FAB) -->
-    <button id="fabNewBooking"
-      class="hidden fixed bottom-24 right-4 z-40 rounded-full w-14 h-14 grid place-items-center
-             text-white shadow-xl bg-gradient-to-l from-[var(--brand)] to-[var(--brand-2)]">
-      <i class="fa-solid fa-plus text-2xl"></i>
-      <span class="sr-only">حجز جديد</span>
-    </button>
-
-    <!-- Bottom Navigation -->
-    <nav class="fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur border-t z-40">
-      <div class="max-w-[1120px] mx-auto px-4">
-        <div class="grid grid-cols-4">
-          <button class="py-3 text-center text-gray-600 bn-active" data-tab="home" onclick="showTab('home')">
-            <div><i class="fa-solid fa-house text-lg"></i></div>
-            <div class="text-xs mt-1">الرئيسية</div>
-          </button>
-          <button class="py-3 text-center text-gray-600" data-tab="offers" onclick="showTab('offers')">
-            <div><i class="fa-solid fa-tags text-lg"></i></div>
-            <div class="text-xs mt-1">العروض</div>
-          </button>
-          <button class="py-3 text-center text-gray-600" data-tab="bookings" onclick="showTab('bookings')">
-            <div><i class="fa-regular fa-calendar-check text-lg"></i></div>
-            <div class="text-xs mt-1">حجوزاتي</div>
-          </button>
-          <button class="py-3 text-center text-gray-600" data-tab="profile" onclick="showTab('profile')">
-            <div><i class="fa-regular fa-user text-lg"></i></div>
-            <div class="text-xs mt-1">بياناتي</div>
-          </button>
-        </div>
-      </div>
-    </nav>
-  </section>
-
-  <!-- مودالات -->
-  <div id="receiptModal" class="hidden fixed inset-0 z-40 items-center justify-center p-4">
-    <div class="absolute inset-0 bg-black/50"></div>
-    <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
-      <div class="absolute top-3 left-3">
-        <button class="text-gray-500 hover:text-gray-700" onclick="closeModal('receiptModal')"><i class="fa-solid fa-xmark"></i></button>
-      </div>
-      <div id="receiptContent"></div>
-      <div class="mt-6 flex gap-2">
-        <button class="flex-1 bg-gray-100 hover:bg-gray-200 rounded-lg py-2" onclick="printReceipt()"><i class="fa-solid fa-print ml-2"></i> طباعة</button>
-        <button class="flex-1 bg-gradient-to-l from-[var(--brand)] to-[var(--brand-2)] text-white rounded-lg py-2" onclick="downloadReceipt()"><i class="fa-solid fa-download ml-2"></i> تنزيل</button>
-      </div>
+    <!-- ================= قسم البانر ================= -->
+    <div class="hero fade-in">
+        <h1 id="dynamic-hero-name">...</h1>
+        <p>تألقي بجمال يعكس فخامتكِ، في ملاذكِ الأنيق.</p>
     </div>
-  </div>
-  <div id="bookingModal" class="hidden fixed inset-0 z-40 items-center justify-center p-4"><div class="absolute inset-0 bg-black/50"></div><div class="relative bg-white rounded-2xl shadow-xl w-full max-w-lg p-6"><div class="absolute top-3 left-3"><button class="text-gray-500 hover:text-gray-700" onclick="closeModal('bookingModal')"><i class="fa-solid fa-xmark"></i></button></div><div id="bookingDetails"></div></div></div>
-  <div id="ratingModal" class="hidden fixed inset-0 z-40 items-center justify-center p-4">
-    <div class="absolute inset-0 bg-black/50"></div>
-    <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
-      <div class="absolute top-3 left-3">
-        <button class="text-gray-500 hover:text-gray-700" onclick="closeModal('ratingModal')"><i class="fa-solid fa-xmark"></i></button>
-      </div>
-      <h3 class="text-xl font-bold mb-2">قيّم التجربة</h3>
-      <p class="text-gray-600 text-sm mb-3">اختر عدد النجوم وأضف تعليقًا (اختياري).</p>
-      <div class="flex gap-2 text-2xl mb-4">
-        <button class="star-btn text-gray-300" onclick="setRating(1)">★</button>
-        <button class="star-btn text-gray-300" onclick="setRating(2)">★</button>
-        <button class="star-btn text-gray-300" onclick="setRating(3)">★</button>
-        <button class="star-btn text-gray-300" onclick="setRating(4)">★</button>
-        <button class="star-btn text-gray-300" onclick="setRating(5)">★</button>
-      </div>
-      <textarea id="ratingComment" class="w-full rounded-xl border-gray-300 focus:border-[var(--brand)] focus:ring-[var(--brand)] input-pad" rows="3" placeholder="تعليقك..."></textarea>
-      <div class="mt-4">
-        <button class="w-full bg-yellow-500 hover:bg-yellow-600 text-white rounded-xl py-2" onclick="submitRating()">إرسال التقييم</button>
-      </div>
+
+    <!-- ================= النبذة والخدمات ================= -->
+    <section class="slide-up">
+        <h2>عن الصالون</h2>
+        <p>نقدم لكِ تجربة متكاملة من الرفاهية والعناية الفائقة، باستخدام أحدث التقنيات وأفضل المنتجات العالمية لضمان إطلالة ساحرة تليق بكِ في كل مناسبة.</p>
+    </section>
+
+    <section class="slide-up" style="background-color: var(--pure-white);">
+        <h2>خدماتنا المميزة</h2>
+        <p>من العناية بالشعر والبشرة إلى تجهيز العرائس الاحترافي، دعي فريقنا من الخبراء يهتم بأدق تفاصيل جمالك في أجواء من الخصوصية والفخامة.</p>
+    </section>
+
+    <!-- ================= قسم التواصل والخريطة ================= -->
+    <section class="contact-section slide-up">
+        <h2>موقعنا وتواصل معنا</h2>
+        <div class="contact-grid">
+            <div class="contact-info">
+                <div class="contact-item">
+                    <i>📍</i>
+                    <span id="dynamic-address">جاري تحميل العنوان...</span>
+                </div>
+                <div class="contact-item">
+                    <i>📞</i>
+                    <a href="#" id="dynamic-phone-link" style="color: inherit; text-decoration: none;">
+                        <span id="dynamic-phone">جاري تحميل الرقم...</span>
+                    </a>
+                </div>
+                <div class="contact-item">
+                    <i>✉️</i>
+                    <a href="#" id="dynamic-email-link" style="color: inherit; text-decoration: none;">
+                        <span id="dynamic-email">جاري تحميل البريد...</span>
+                    </a>
+                </div>
+            </div>
+            
+            <div class="map-container">
+                <iframe id="dynamic-map" src="" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+            </div>
+        </div>
+    </section>
+
+    <!-- ================= الأزرار العائمة ================= -->
+    <div class="cta-container fade-in">
+        <a href="#" id="floating-whatsapp-btn" class="btn btn-whatsapp" target="_blank">واتساب</a>
+        <a href="booking.html" class="btn btn-book">احجز موعدك الآن</a>
     </div>
-  </div>
 
-  <!-- مكتبات -->
-  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- ================= الفوتر ================= -->
+    <footer>
+        <div class="footer-content">
+            <img id="dynamic-footer-logo" src="" alt="الشعار" class="footer-logo" style="display: none;">
+            <h3 id="dynamic-footer-name" style="color: var(--primary-gold); font-size: 1.5rem;">...</h3>
+            <p>نصنع الجمال بحب وإتقان لنبرز أفضل ما فيكِ.</p>
+            
+            <div class="social-links">
+                <a href="#" id="dynamic-instagram" target="_blank">Instagram</a>
+                <span>|</span>
+                <a href="#" id="dynamic-snapchat" target="_blank">Snapchat</a>
+            </div>
+            
+            <div class="copyright">
+                &copy; <span id="current-year"></span> جميع الحقوق محفوظة لـ <span id="dynamic-copyright-name"></span>.
+            </div>
+        </div>
+    </footer>
 
-  <!-- سكربت التطبيق -->
-  <script>
-  /* ===== إعدادات Supabase (عدّل القيم) ===== */
-  const SUPABASE_URL      = 'https://tfackgkhzdvuwearbeyl.supabase.co';   // ← غيّر
-  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRmYWNrZ2toemR2dXdlYXJiZXlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc4OTA5NDcsImV4cCI6MjA3MzQ2Njk0N30.odWDKneV-XkQmJNmGpUQDi93C2pRMpTbXdZ1MDkTAbs';                      // ← غيّر (لا تستخدم service_role في المتصفح)
-  const supabase = (window.supabase && window.supabase.createClient)
-    ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+    <!-- ================= الجافاسكريبت ================= -->
+    <script>
+        // 1. تفعيل الحركات (Animations) عند التمرير
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if(entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        });
 
-  const FALLBACK_LOGO_URL = 'https://placehold.co/300x300/png?text=Salon+Logo';
-  const STAFF_BUCKET='staff-avatars', BANNERS_BUCKET='banners', OFFERS_BUCKET='offers';
+        document.querySelectorAll('.fade-in, .slide-up').forEach(el => observer.observe(el));
+        // تفعيل العنصر الأول مباشرة
+        setTimeout(() => document.querySelector('.hero').classList.add('visible'), 100);
 
-  /* ===== حالة عامة ===== */
-  let authUser=null, currentUser=null, dbServices=[], servicesByCode={},
-      selectedServices=[], selectedStaff=null, selectedDate=null, selectedTime=null,
-      bookings=[], salonInfo=null, currentBookingId=null, currentRating=0;
+        // ========================================================
+        // 2. الربط مع Supabase لجلب الإعدادات (تأكد من وضع روابطك)
+        // ========================================================
+        const SUPABASE_URL = 'https://xdusjjrslfslakcovrkf.supabase.co'; // ضع رابطك هنا
+        const SUPABASE_ANON_KEY = 'sb_publishable_o2oaEWqE-PJzWjqe6eDq9A_OTwi5Wg6'; // ضع مفتاحك هنا
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  const $  = (sel, root=document) => root.querySelector(sel);
-  const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
-  const toMinutes=(hhmm)=>{ const [h,m]=hhmm.split(':').map(Number); return h*60+m; };
-  const minutesToHHMM=(mins)=>`${String(Math.floor(mins/60)).padStart(2,'0')}:${String(mins%60).padStart(2,'0')}`;
-  const weekdayIndex=(d)=>new Date(d+'T00:00:00').getDay(); // 0=الأحد
-  const arabicStatus=(s)=>s==='pending'?'قيد الانتظار':s==='confirmed'?'مؤكد':s==='completed'?'منتهي':'ملغي';
-  const fmt=(n)=> new Intl.NumberFormat('ar-EG').format(n);
+        async function loadSalonSettings() {
+            try {
+                // جلب بيانات الإعدادات (أول صف)
+                const { data: settings, error } = await supabase
+                    .from('salon_settings')
+                    .select('*')
+                    .limit(1)
+                    .single();
 
-  // Fallback لمنع الشاشة البيضاء
-  document.getElementById('loginScreen')?.classList.remove('hidden');
-  document.getElementById('mainApp')?.classList.add('hidden');
+                if (error) throw error;
+                
+                if (settings) {
+                    // تحديث النصوص والأسماء
+                    const salonName = settings.salon_name || 'صالون تجميل';
+                    document.title = salonName;
+                    document.getElementById('dynamic-header-name').innerText = salonName;
+                    document.getElementById('dynamic-hero-name').innerText = salonName;
+                    document.getElementById('dynamic-footer-name').innerText = salonName;
+                    document.getElementById('dynamic-copyright-name').innerText = salonName;
+                    
+                    // تحديث الشعارات
+                    if (settings.logo_url) {
+                        const headerLogo = document.getElementById('dynamic-logo');
+                        const footerLogo = document.getElementById('dynamic-footer-logo');
+                        headerLogo.src = settings.logo_url;
+                        headerLogo.style.display = 'block';
+                        footerLogo.src = settings.logo_url;
+                        footerLogo.style.display = 'block';
+                    }
 
-  /* ===== Helpers UI ===== */
-  function setLogo(url){ const src=url||FALLBACK_LOGO_URL; ['#salonLogoLogin','#salonLogoSignup','#salonLogoSmall'].forEach(id=>{ const img=$(id); if(img) img.src=src; }); }
-  function setBrandName(name){
-    const brand = name || 'بيوتي بوك';
-    const h = document.querySelector('#brandName'); if(h) h.textContent = brand;
-    const ln = document.querySelector('#salonNameLogin'); if(ln) ln.textContent = brand;
-    const sn = document.querySelector('#salonNameSignup'); if(sn) sn.textContent = brand;
-    document.title = brand + ' – حجوزات';
-  }
-  function setSocialLinks(info, ids=['loginSocial','signupSocial','appSocial']){
-    const links = [];
-    if(info?.facebook_url)  links.push(`<a href="${info.facebook_url}" target="_blank" title="Facebook"><i class="fa-brands fa-facebook"></i></a>`);
-    if(info?.instagram_url) links.push(`<a href="${info.instagram_url}" target="_blank" title="Instagram"><i class="fa-brands fa-instagram"></i></a>`);
-    if(info?.tiktok_url)    links.push(`<a href="${info.tiktok_url}" target="_blank" title="TikTok"><i class="fa-brands fa-tiktok"></i></a>`);
-    if(info?.whatsapp_phone)links.push(`<a href="https://wa.me/${info.whatsapp_phone}" target="_blank" title="WhatsApp"><i class="fa-brands fa-whatsapp"></i></a>`);
-    ids.forEach(id=>{ const c=document.getElementById(id); if(c) c.innerHTML = links.join(''); });
-  }
-  function showSignup(){ $('#loginScreen')?.classList.add('hidden'); $('#signupScreen')?.classList.remove('hidden'); }
-  function showLogin(){ $('#signupScreen')?.classList.add('hidden'); $('#loginScreen')?.classList.remove('hidden'); }
+                    // تحديث بيانات التواصل
+                    document.getElementById('dynamic-address').innerText = settings.address_text;
+                    
+                    document.getElementById('dynamic-phone').innerText = settings.contact_phone;
+                    document.getElementById('dynamic-phone-link').href = `tel:${settings.contact_phone}`;
+                    
+                    document.getElementById('dynamic-email').innerText = settings.contact_email;
+                    document.getElementById('dynamic-email-link').href = `mailto:${settings.contact_email}`;
 
-  document.addEventListener('DOMContentLoaded', async () => {
-    // Auth events
-    $('#loginBtn')?.addEventListener('click', signInWithEmail);
-    $('#signupBtn')?.addEventListener('click', signUpWithEmail);
-    $('#logoutBtn')?.addEventListener('click', signOut);
-    ['loginEmail','loginPassword'].forEach(id => { const el=document.getElementById(id); if(el) el.addEventListener('keydown', e=>{ if(e.key==='Enter') signInWithEmail(); });});
-    ['signupEmail','signupFullName','signupPhone','signupPassword','signupPasswordConfirm'].forEach(id => { const el=document.getElementById(id); if(el) el.addEventListener('keydown', e=>{ if(e.key==='Enter') signUpWithEmail(); });});
+                    // تحديث زر الواتساب العائم (إزالة أي رموز ليتوافق مع API الواتساب)
+                    if (settings.contact_phone) {
+                        const waNumber = settings.contact_phone.replace(/\D/g, ''); 
+                        document.getElementById('floating-whatsapp-btn').href = `https://wa.me/${waNumber}`;
+                    }
 
-    await fetchSalonInfo();
-    await loadServicesFromDB();
-    await loadBannersFromDB();
-    await loadBestOffers();
+                    // تحديث الخريطة
+                    if (settings.map_embed_url) {
+                        document.getElementById('dynamic-map').src = settings.map_embed_url;
+                    }
 
-    // جلسة حالية
-    const { data:{ session } } = await supabase.auth.getSession();
-    if (session?.user) { authUser = session.user; await postLoginSetup(); }
-    supabase.auth.onAuthStateChange(async (_e, s) => {
-      if (s?.user) { authUser=s.user; await postLoginSetup(); }
-      else { authUser=null; currentUser=null; $('#mainApp')?.classList.add('hidden'); showLogin(); }
-    });
-
-    // تاريخ الحجز
-    const dt=$('#bookingDate'); if(dt){ const t=new Date().toISOString().split('T')[0]; dt.min=t; dt.addEventListener('change', ()=>{ selectedDate=dt.value; const n=$('#step2Next'); if(n) n.disabled=!selectedDate; }); }
-
-    // FAB: حجز جديد سريع
-    document.getElementById('fabNewBooking')?.addEventListener('click', () => { showBookingWizard(); });
-
-    // إشعارات: فتح/إغلاق
-    document.getElementById('notifyBtn')?.addEventListener('click', () => { toggleNotifyPanel(); });
-    document.addEventListener('click', (e) => {
-      const btn   = document.getElementById('notifyBtn');
-      const panel = document.getElementById('notifyPanel');
-      if (!panel || !btn) return;
-      const clickedInside = panel.contains(e.target) || btn.contains(e.target);
-      if (!clickedInside) toggleNotifyPanel(false);
-    });
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') toggleNotifyPanel(false); });
-  });
-
-  async function fetchSalonInfo(){
-    try{
-      const { data } = await supabase.from('salon_info').select('*').eq('active',true).order('updated_at',{ascending:false}).limit(1);
-      salonInfo = (data && data[0]) || null;
-      setLogo(salonInfo?.logo_url); setBrandName(salonInfo?.name); setSocialLinks(salonInfo);
-    }catch{ setLogo(FALLBACK_LOGO_URL); setBrandName('بيوتي بوك'); }
-  }
-
-  /* ===== Auth ===== */
-  async function signInWithEmail(){
-    const btn=$('#loginBtn');
-    try{
-      btn && (btn.disabled=true, btn.textContent='جاري الدخول...');
-      const email=$('#loginEmail')?.value?.trim(), pass=$('#loginPassword')?.value;
-      if (!email||!pass) return showNotification('أدخل البريد وكلمة المرور','error');
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
-      if (error) throw error;
-      authUser=data.user; await postLoginSetup();
-    }catch(e){ showNotification('فشل تسجيل الدخول: '+(e.message||''),'error'); console.error(e); }
-    finally{ btn && (btn.disabled=false, btn.innerHTML='دخول <i class="fa-solid fa-arrow-right-to-bracket mr-2"></i>'); }
-  }
-  async function signUpWithEmail(){
-    const btn=$('#signupBtn');
-    try{
-      btn && (btn.disabled=true, btn.textContent='جاري إنشاء الحساب...');
-      const email=$('#signupEmail')?.value?.trim(), full=$('#signupFullName')?.value?.trim(), phone=$('#signupPhone')?.value?.trim(), p1=$('#signupPassword')?.value, p2=$('#signupPasswordConfirm')?.value;
-      if(!email||!full||!phone||!p1||!p2) return showNotification('أدخل جميع الحقول','error');
-      if(p1!==p2) return showNotification('تأكيد كلمة المرور غير مطابق','error');
-      const { data, error } = await supabase.auth.signUp({ email, password:p1, options:{ data:{ full_name:full, phone } } });
-      if (error) throw error;
-      if (data.session?.user){ authUser=data.session.user; await postLoginSetup(); showNotification('تم إنشاء الحساب وتسجيل الدخول','success'); }
-      else { showNotification('تم إنشاء الحساب. راجع بريدك للتأكيد ثم سجّل الدخول.','info'); showLogin(); }
-    }catch(e){ showNotification('فشل إنشاء الحساب: '+(e.message||''),'error'); }
-    finally{ btn && (btn.disabled=false, btn.innerHTML='إنشاء الحساب <i class="fa-solid fa-user-check mr-2"></i>'); }
-  }
-
-  async function ensureCustomerProfile(){
-    // 1) RPC الرسمي
-    const rpc = await supabase.rpc('ensure_customer_profile');
-    if (!rpc.error && rpc.data) return (currentUser = rpc.data);
-
-    // 2) fallback قراءة/إنشاء
-    const uid = (await supabase.auth.getUser()).data?.user?.id;
-    if (!uid) throw new Error('no auth uid');
-    const { data: cRow } = await supabase.from('customers').select('*').eq('auth_user_id', uid).maybeSingle();
-
-    if (cRow) { currentUser = cRow; return cRow; }
-
-    const metaUser = (await supabase.auth.getUser()).data?.user;
-    const { data: inserted, error: insErr } = await supabase.from('customers').insert({
-      auth_user_id: uid,
-      full_name: metaUser?.user_metadata?.full_name || null,
-      phone:     metaUser?.user_metadata?.phone || null
-    }).select().single();
-
-    if (insErr) throw insErr;
-    currentUser = inserted; return inserted;
-  }
-
-  async function postLoginSetup(){
-    try{
-      await ensureCustomerProfile();
-      $('#userName') && ($('#userName').textContent=currentUser?.full_name||authUser?.email||'مستخدم');
-      $('#profileName') && ($('#profileName').value = currentUser?.full_name || '');
-      $('#profilePhone') && ($('#profilePhone').value = currentUser?.phone || '');
-      $('#profileEmail') && ($('#profileEmail').value = authUser?.email || '');
-      const adminBtn = document.getElementById('adminBtn');
-      if (adminBtn) adminBtn.classList[currentUser?.is_admin ? 'remove' : 'add']('hidden');
-      $('#loginScreen')?.classList.add('hidden'); $('#signupScreen')?.classList.add('hidden'); $('#mainApp')?.classList.remove('hidden');
-      await refreshDashboard();
-      showTab('home');
-      if (currentUser?.is_admin) renderAdminPanels();
-      document.getElementById('fabNewBooking')?.classList.remove('hidden');
-      refreshNotificationsUI();
-    }catch(e){ console.error(e); showNotification('تم الدخول لكن تعذّر تهيئة الواجهة','warning'); $('#mainApp')?.classList.remove('hidden'); showTab('home'); }
-  }
-  async function signOut(){
-    await supabase.auth.signOut();
-    authUser=null; currentUser=null;
-    document.getElementById('fabNewBooking')?.classList.add('hidden');
-    $('#mainApp')?.classList.add('hidden'); showLogin();
-  }
-
-  /* ===== تبويبات ===== */
-  function showTab(tab){
-    ['home','offers','bookings','profile','booking','admin'].forEach(t => {
-      document.getElementById(t+'Tab')?.classList.add('hidden');
-    });
-    document.getElementById(tab+'Tab')?.classList.remove('hidden');
-
-    (tab==='home' ? $('#bannersArea')?.classList.remove('hidden') : $('#bannersArea')?.classList.add('hidden'));
-
-    $$('nav [data-tab]').forEach(btn => btn.classList.remove('bn-active'));
-    const activeBtn = document.querySelector(`nav [data-tab="${tab}"]`);
-    activeBtn && activeBtn.classList.add('bn-active');
-
-    if(tab==='offers') loadOffers();
-    if(tab==='bookings') loadBookings();
-
-    // FAB: مخفي أثناء معالج الحجز فقط
-    const fab = document.getElementById('fabNewBooking');
-    if (fab) fab.classList[tab==='booking' ? 'add' : 'remove']('hidden');
-  }
-  function showBookingWizard(){ showTab('booking'); }
-
-  /* ===== الخدمات ===== */
-  async function loadServicesFromDB(){
-    const { data, error } = await supabase.from('services').select('id, code, name_ar, duration_min, price_egp').eq('active', true).order('name_ar');
-    if (error) { showNotification('تعذر تحميل الخدمات','error'); console.error(error); return; }
-    dbServices = data || []; servicesByCode={}; dbServices.forEach(s => servicesByCode[s.code]=s);
-    const grid = document.querySelector('#step1 .grid');
-    if (grid){
-      grid.innerHTML = dbServices.map(s => `
-        <div class="service-item p-4 border-2 glass rounded-2xl cursor-pointer hover:border-[var(--brand)] transition-colors" data-service="${s.code}">
-          <div class="flex justify-between items-center">
-            <div><h4 class="font-semibold">${s.name_ar}</h4><p class="text-gray-600 text-sm">خدمة: ${s.code}</p></div>
-            <div class="text-left"><p class="font-bold text-[var(--brand)]">${s.price_egp} ج.م</p><p class="text-sm text-gray-500">${s.duration_min} دقيقة</p></div>
-          </div>
-        </div>`).join('');
-      setupServiceSelection();
-    }
-  }
-  function setupServiceSelection(){
-    $$('#step1 .service-item').forEach(item=>{
-      item.addEventListener('click', ()=>{
-        const s=servicesByCode[item.dataset.service]; if(!s) return;
-        const exists = selectedServices.find(x=>x.code===s.code);
-        if (exists){ item.classList.remove('border-[var(--brand)]','bg-purple-50'); selectedServices = selectedServices.filter(x=>x.code!==s.code); }
-        else {
-          if (selectedServices.length>=3) return showNotification('يمكنك اختيار 3 خدمات كحد أقصى','warning');
-          item.classList.add('border-[var(--brand)]','bg-purple-50');
-          selectedServices.push({ id:s.id, code:s.code, name:s.name_ar, price:s.price_egp, duration:s.duration_min });
+                    // تحديث روابط السوشيال ميديا
+                    document.getElementById('dynamic-instagram').href = settings.instagram_url || '#';
+                    document.getElementById('dynamic-snapchat').href = settings.snapchat_url || '#';
+                }
+            } catch (err) {
+                console.error("خطأ في جلب بيانات الصالون:", err.message);
+                // وضع قيم احتياطية في حال فشل الاتصال بقاعدة البيانات
+                document.getElementById('dynamic-header-name').innerText = 'إليزيه بيوتي';
+                document.getElementById('dynamic-hero-name').innerText = 'إليزيه بيوتي';
+            }
         }
-        updateSelectedServices();
-      });
-    });
-  }
-  function updateSelectedServices(){
-    const container=$('#selectedServices'), list=$('#servicesList'), nextBtn=$('#step1Next');
-    if (selectedServices.length===0){ container?.classList.add('hidden'); if(nextBtn) nextBtn.disabled=true; return; }
-    container?.classList.remove('hidden'); if(nextBtn) nextBtn.disabled=false;
-    if(list) list.innerHTML = selectedServices.map(s=>`<div class="flex justify-between items-center p-2 bg-white rounded-xl border"><span>${s.name}</span><span class="text-[var(--brand)] font-medium">${s.price} ج.م</span></div>`).join('');
-    const totalPrice=selectedServices.reduce((a,s)=>a+s.price,0), totalDuration=selectedServices.reduce((a,s)=>a+s.duration,0);
-    $('#totalPrice').textContent=`${totalPrice} ج.م`; $('#totalDuration').textContent=`${totalDuration} دقيقة`;
-  }
-  function nextStep(step){ $$('.booking-step').forEach(s=>s.classList.add('hidden')); document.getElementById(`step${step}`)?.classList.remove('hidden'); if(step===3) loadAvailableStaff(); if(step===4) loadTimeSlots(); }
-  function prevStep(step){ $$('.booking-step').forEach(s=>s.classList.add('hidden')); document.getElementById(`step${step}`)?.classList.remove('hidden'); }
 
-  /* ===== الموظفون (حسب خطة دوام اليوم المختار) ===== */
-  async function loadAvailableStaff(){
-    const container = $('#staffList'); if(!container) return;
-    if (!selectedDate){ container.innerHTML='<p class="text-center text-gray-500">اختر التاريخ أولاً</p>'; return; }
-    const wd = weekdayIndex(selectedDate);
+        // تعيين السنة الحالية في حقوق النشر
+        document.getElementById('current-year').innerText = new Date().getFullYear();
 
-    // 1) جداول العمل لليوم
-    const { data: sch, error: schErr } = await supabase
-      .from('staff_schedule')
-      .select('staff_id')
-      .eq('weekday', wd)
-      .eq('active', true);
-    if (schErr){ console.error(schErr); container.innerHTML='<p class="text-center text-red-600">تعذر تحميل الموظفين</p>'; return; }
-    const ids = [...new Set((sch||[]).map(s=>s.staff_id))];
-    if (!ids.length){ container.innerHTML='<p class="text-center text-gray-500">لا يوجد موظفون متاحون في هذا اليوم</p>'; return; }
-
-    // 2) بيانات الموظفين الفعّالين
-    const { data, error } = await supabase.from('staff').select('*').in('id', ids).eq('active', true);
-    if (error){ console.error(error); container.innerHTML='<p class="text-center text-red-600">تعذر تحميل الموظفين</p>'; return; }
-    const list = (data||[]);
-    if (!list.length){ container.innerHTML='<p class="text-center text-gray-500">لا يوجد موظفون متاحون</p>'; return; }
-
-    container.innerHTML = list
-      .sort((a,b)=> String(a.full_name||'').localeCompare(String(b.full_name||''),'ar'))
-      .map(m=>`
-        <button type="button" class="staff-card p-3 glass rounded-2xl text-right border-2" data-staff-id="${m.id}">
-          <div class="flex items-center gap-3">
-            ${m.avatar_url
-              ? `<img src="${m.avatar_url}" class="w-24 h-24 sm:w-24 sm:h-24 md:w-20 md:h-20 rounded-2xl object-cover border" alt="${m.full_name||''}">`
-              : `<div class="w-24 h-24 sm:w-24 sm:h-24 md:w-20 md:h-20 rounded-2xl grid place-items-center bg-purple-50 text-4xl border">${m.avatar_emoji||'👤'}</div>`}
-            <div class="flex-1">
-              <div class="font-bold text-lg">${m.full_name||'موظف'}</div>
-              <div class="text-sm text-gray-600">خبرة ${m.experience_years ?? 0} سنوات</div>
-              <div class="flex items-center mt-1 text-sm text-gray-600"><span>⭐</span><span class="mr-1">${Number(m.rating_avg||0).toFixed(1)}</span></div>
-            </div>
-          </div>
-        </button>`).join('');
-
-    $$('.staff-card').forEach(card=>{
-      card.addEventListener('click', ()=>{
-        $$('.staff-card').forEach(i=>i.classList.remove('border-[var(--brand)]','bg-purple-50'));
-        card.classList.add('border-[var(--brand)]','bg-purple-50');
-        selectedStaff = card.dataset.staffId;
-        const btn = $('#step3Next'); if (btn) btn.disabled = false;
-      });
-    });
-  }
-
-  /* ===== المواعيد ===== */
-  function toBusy(windowRows){ return (windowRows||[]).map(b=>[toMinutes(b.booking_time), toMinutes(b.booking_time)+(b.total_duration||0)]); }
-  async function loadTimeSlots(){
-    const container=$('#timeSlots'); if(!container) return;
-    container.innerHTML='...';
-    if(!selectedStaff||!selectedDate||selectedServices.length===0){ container.innerHTML='<p class="text-center text-gray-500 col-span-full">اختر الخدمات والتاريخ والموظف أولاً</p>'; return; }
-    const needMin = selectedServices.reduce((a,s)=>a+s.duration,0);
-    const wd=weekdayIndex(selectedDate);
-    const { data: sch } = await supabase.from('staff_schedule').select('start_time, end_time, active').eq('staff_id', selectedStaff).eq('weekday', wd).maybeSingle();
-    if(!sch || sch.active===false){ container.innerHTML='<p class="text-center text-gray-500 col-span-full">لا يوجد دوام في هذا اليوم</p>'; return; }
-    const { data: exists } = await supabase.from('bookings').select('booking_time, total_duration, status').eq('staff_id', selectedStaff).eq('booking_date', selectedDate).in('status',['pending','confirmed']);
-    const busy = toBusy(exists);
-    const dayStart=toMinutes(sch.start_time), dayEnd=toMinutes(sch.end_time), step=30, slots=[];
-    for(let t=dayStart; t+needMin<=dayEnd; t+=step){ const s=t,e=t+needMin; const overlap=busy.some(([bs,be]) => !(e<=bs || s>=be)); if(!overlap) slots.push(minutesToHHMM(t)); }
-    if(!slots.length) { container.innerHTML='<p class="col-span-full text-center text-gray-500">لا توجد مواعيد متاحة لهذه المدة</p>'; return; }
-    container.innerHTML = slots.map(time=>`<button class="time-slot p-3 border-2 rounded-xl font-medium transition-colors glass hover:border-[var(--brand)]" data-time="${time}">${time}</button>`).join('');
-    $$('.time-slot').forEach(btn=>btn.addEventListener('click', ()=>{ $$('.time-slot').forEach(s=>s.classList.remove('border-[var(--brand)]','bg-purple-50')); btn.classList.add('border-[var(--brand)]','bg-purple-50'); selectedTime=btn.dataset.time; const n=$('#step4Next'); if(n) n.disabled=false; }));
-  }
-
-  /* ===== إنشاء حجز ===== */
-  async function confirmBooking(){
-    if (!authUser || !currentUser) return showNotification('سجّل دخول أولاً','error');
-    if (!selectedStaff || !selectedDate || !selectedTime || selectedServices.length===0) return showNotification('أكمل خطوات الحجز','warning');
-    const totalPrice=selectedServices.reduce((a,s)=>a+s.price,0), totalDuration=selectedServices.reduce((a,s)=>a+s.duration,0);
-    const { data: created, error: bErr } = await supabase.from('bookings').insert({ customer_id: currentUser.id, staff_id: selectedStaff, booking_date: selectedDate, booking_time: selectedTime, status:'pending', total_price_egp: totalPrice, total_duration: totalDuration }).select().single();
-    if (bErr){ showNotification('تعذر إنشاء الحجز','error'); console.error(bErr); return; }
-    const items=selectedServices.map(s=>({ booking_id: created.id, service_id: s.id, price_egp_snap: s.price, duration_min_snap: s.duration }));
-    const { error: liErr } = await supabase.from('booking_services').insert(items);
-    if (liErr) { showNotification('تم إنشاء الحجز لكن حدث خطأ في حفظ الخدمات','warning'); console.error(liErr); }
-    selectedServices=[]; selectedStaff=null; selectedDate=null; selectedTime=null;
-    $$('#step1 .service-item').forEach(i=>i.classList.remove('border-[var(--brand)]','bg-purple-50'));
-    $('#selectedServices')?.classList.add('hidden'); $$('.booking-step').forEach(s=>s.classList.add('hidden')); $('#step1')?.classList.remove('hidden'); const nx=$('#step1Next'); if(nx) nx.disabled=true;
-    showNotification('تم إرسال طلب الحجز بنجاح!','success');
-    await refreshDashboard(); await showReceiptFromDB(created.id); showTab('home');
-  }
-
-  /* ===== إيصال ===== */
-  async function showReceiptFromDB(bookingId){
-    const { data: codeRow } = await supabase.from('bookings').select('booking_code').eq('id', bookingId).single();
-    const { data: r } = await supabase.from('v_booking_receipt').select('*').eq('booking_code', codeRow?.booking_code).maybeSingle();
-    const b = r || {}; const token = b?.qr_token || `BOOKING:${b?.booking_code||bookingId}`;
-    const content = $('#receiptContent'); if (!content) return;
-    content.innerHTML = `
-      <div class="text-center mb-6"><h2 class="text-xl font-bold text-[var(--brand)]">${salonInfo?.name||'بيوتي بوك'}</h2><p class="text-gray-600">إيصال حجز</p></div>
-      <div class="space-y-3 mb-6">
-        <div class="flex justify-between"><span class="text-gray-600">رقم الحجز:</span><span class="font-medium">#${b?.booking_code||''}</span></div>
-        <div class="flex justify-between"><span class="text-gray-600">العميل:</span><span class="font-medium">${b?.customer_name||''}</span></div>
-        <div class="flex justify-between"><span class="text-gray-600">التاريخ:</span><span class="font-medium">${b?.booking_date||''}</span></div>
-        <div class="flex justify-between"><span class="text-gray-600">الوقت:</span><span class="font-medium">${b?.booking_time||''}</span></div>
-        <div class="flex justify-between"><span class="text-gray-600">الموظف:</span><span class="font-medium">${b?.staff_name||''}</span></div>
-        <div class="flex justify-between"><span class="text-gray-600">الإجمالي:</span><span class="font-bold text-[var(--brand)]">${b?.total_price_egp||0} ج.م</span></div>
-      </div>
-      <div class="text-center"><canvas id="qr-${bookingId}" class="inline-block"></canvas><p class="text-sm text-gray-600 mt-2">امسح الكود للتحقق من الحجز</p></div>`;
-    QRCode.toCanvas(document.getElementById(`qr-${bookingId}`), token, { width: 120, height: 120 });
-    const modal = document.getElementById('receiptModal'); modal?.classList.remove('hidden'); modal?.classList.add('flex');
-  }
-  function printReceipt(){ window.print(); }
-  function downloadReceipt(){
-    const el = document.getElementById('receiptContent');
-    const blob = new Blob([`<html dir="rtl" lang="ar"><head><meta charset="utf-8"><title>إيصال</title></head><body>${el?.innerHTML||''}</body></html>`], {type:'text/html'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href=url; a.download='receipt.html'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-  }
-
-  /* ===== لوحة التحكم / العدادات ===== */
-  async function refreshDashboard(){ if(!currentUser) return; await loadBookings(); await loadCounters(); }
-  async function loadBookings(){
-    const { data, error } = await supabase.from('bookings').select('id, booking_code, booking_date, booking_time, status, total_price_egp, staff:staff_id(full_name)').eq('customer_id', currentUser.id).order('created_at',{ascending:false});
-    if (error){ console.error(error); showNotification('تعذر تحميل الحجوزات','error'); return; }
-    const ids=(data||[]).map(b=>b.id); let itemsByBooking={};
-    if (ids.length){
-      const { data: lines } = await supabase.from('booking_services').select('booking_id, price_egp_snap, services:service_id(name_ar)').in('booking_id', ids);
-      (lines||[]).forEach(li=>{ (itemsByBooking[li.booking_id] ||= []).push({ name: li.services?.name_ar || 'خدمة', price: li.price_egp_snap }); });
-    }
-    bookings=(data||[]).map(b=>({ id:b.id, code:b.booking_code, services:itemsByBooking[b.id]||[], staff:{name:b.staff?.full_name||''}, date:b.booking_date, time:b.booking_time, status:b.status, totalPrice:b.total_price_egp }));
-    const container=$('#bookingsList'); if(!container) return;
-    if(!bookings.length){ container.innerHTML='<p class="text-center text-gray-500 py-8">لا توجد حجوزات حتى الآن</p>'; updateBookingCountsUI(0,0,0); refreshNotificationsUI(); return; }
-    const statusColors={ pending:'bg-yellow-100 text-yellow-800', confirmed:'bg-blue-100 text-blue-800', completed:'bg-green-100 text-green-800', cancelled:'bg-red-100 text-red-800' };
-    container.innerHTML = bookings.map(b=>`
-      <div class="booking-card p-4 border rounded-2xl glass" data-status="${b.status}">
-        <div class="flex justify-between items-start mb-3">
-          <div><h4 class="font-semibold text-lg">#${b.code}</h4><p class="text-gray-600">${b.services.map(s=>s.name).join(', ')||'-'}</p></div>
-          <span class="px-3 py-1 rounded-full text-sm font-medium ${statusColors[b.status]}">${arabicStatus(b.status)}</span>
-        </div>
-        <div class="grid grid-cols-2 gap-4 text-sm text-gray-600 mb-4">
-          <div><i class="fa-regular fa-calendar ml-1"></i>${b.date}</div>
-          <div><i class="fa-regular fa-clock ml-1"></i>${b.time}</div>
-          <div><i class="fa-regular fa-user ml-1"></i>${b.staff.name}</div>
-          <div><i class="fa-solid fa-money-bill ml-1"></i>${b.totalPrice} ج.م</div>
-        </div>
-        <div class="flex gap-2">
-          <button onclick="viewBookingDetails('${b.id}')" class="flex-1 bg-gray-100 text-gray-700 px-3 py-2 rounded text-sm hover:bg-gray-200">التفاصيل</button>
-          ${(b.status==='pending'||b.status==='confirmed')?`<button onclick="cancelBooking('${b.id}')" class="bg-red-100 text-red-700 px-3 py-2 rounded text-sm hover:bg-red-200">إلغاء</button>`:''}
-          ${b.status==='completed'?`<button onclick="rateBooking('${b.id}')" class="bg-yellow-100 text-yellow-700 px-3 py-2 rounded text-sm hover:bg-yellow-200">تقييم</button>`:''}
-        </div>
-      </div>`).join('');
-    const open=bookings.filter(b=>b.status==='pending'||b.status==='confirmed').length, done=bookings.filter(b=>b.status==='completed').length, canc=bookings.filter(b=>b.status==='cancelled').length;
-    updateBookingCountsUI(open,done,canc);
-    refreshNotificationsUI();
-  }
-  function viewBookingDetails(id){
-    const b=bookings.find(x=>x.id===id); if(!b) return;
-    const details=document.getElementById('bookingDetails'); if(!details) return;
-    details.innerHTML=`<div class="space-y-4">
-      <div class="text-center pb-4 border-b">
-        <h4 class="text-lg font-bold">حجز #${b.code}</h4>
-        <span class="inline-block px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 mt-2">${arabicStatus(b.status)}</span>
-      </div>
-      <div><h5 class="font-semibold mb-2">الخدمات:</h5>${(b.services||[]).map(s=>`<div class="flex justify-between py-1"><span>${s.name}</span><span>${s.price||''} ج.م</span></div>`).join('')||'<p class="text-gray-500">—</p>'}</div>
-      <div class="grid grid-cols-2 gap-4 text-sm">
-        <div><span class="text-gray-600">التاريخ:</span><p class="font-medium">${b.date}</p></div>
-        <div><span class="text-gray-600">الوقت:</span><p class="font-medium">${b.time}</p></div>
-        <div><span class="text-gray-600">الموظف:</span><p class="font-medium">${b.staff.name}</p></div>
-        <div><span class="text-gray-600">الإجمالي:</span><p class="font-medium text-[var(--brand)]">${b.totalPrice} ج.م</p></div>
-      </div></div>`;
-    const modal=document.getElementById('bookingModal'); modal?.classList.remove('hidden'); modal?.classList.add('flex');
-  }
-  function updateBookingCountsUI(open,done,canc){ $('#openBookingsCount').textContent=open; $('#completedBookingsCount').textContent=done; $('#cancelledBookingsCount').textContent=canc; }
-  async function loadCounters(){ const { data } = await supabase.from('v_customer_booking_counts').select('*').eq('customer_id', currentUser.id).maybeSingle(); if(data) updateBookingCountsUI(data.open_count||0, data.completed_count||0, data.cancelled_count||0); }
-  async function cancelBooking(id){
-    if(!confirm('هل أنت متأكد من إلغاء هذا الحجز؟')) return;
-    const { error } = await supabase.from('bookings').update({status:'cancelled', cancelled_at:new Date().toISOString()}).eq('id', id);
-    if(error) return showNotification('تعذر إلغاء الحجز','error');
-    showNotification('تم إلغاء الحجز بنجاح','success'); await refreshDashboard();
-  }
-
-  /* ===== إشعارات (بسيطة مبنية على الحجوزات) ===== */
-  function refreshNotificationsUI(){
-    const listEl = document.getElementById('notifyList');
-    const badge  = document.getElementById('notifyBadge');
-    if (!listEl || !badge) return;
-
-    const items = [];
-    (bookings || []).forEach(b => {
-      if (b.status === 'pending' || b.status === 'confirmed') {
-        const label = b.status === 'pending' ? 'حجز قيد التأكيد' : 'حجز مؤكد';
-        items.push(`${label} — ${b.date} ${b.time} — ${b.staff.name || ''}`);
-      }
-    });
-
-    if (!items.length) {
-      listEl.innerHTML = '<div class="text-center py-4 text-gray-500">لا إشعارات حالياً</div>';
-      badge.classList.add('hidden');
-    } else {
-      listEl.innerHTML = items.slice(0, 10).map(t => `<div class="p-2 rounded-lg border hover:bg-gray-50">${t}</div>`).join('');
-      badge.textContent = String(items.length);
-      badge.classList.remove('hidden');
-    }
-  }
-  function toggleNotifyPanel(show){
-    const panel = document.getElementById('notifyPanel');
-    if (!panel) return;
-    if (typeof show === 'boolean') { panel.classList[show ? 'remove' : 'add']('hidden'); }
-    else { panel.classList.toggle('hidden'); }
-  }
-
-  /* ===== العروض ===== */
-  async function loadBestOffers(){ // الرئيسية
-    const today = new Date().toISOString().split('T')[0];
-    const { data, error } = await supabase
-      .from('offers')
-      .select('*')
-      .eq('active', true)
-      .lte('start_date', today)
-      .or(`end_date.is.null,end_date.gte.${today}`)
-      .order('position')
-      .limit(3);
-    if (error){ console.warn('offers(home)', error); return; }
-    renderOffersCards('#bestOffers', data||[]);
-  }
-  async function loadOffers(){ // تبويب العروض
-    const today = new Date().toISOString().split('T')[0];
-    const { data, error } = await supabase
-      .from('offers')
-      .select('*')
-      .eq('active', true)
-      .lte('start_date', today)
-      .or(`end_date.is.null,end_date.gte.${today}`)
-      .order('position');
-    if (error){ showNotification('تعذر تحميل العروض','error'); console.error(error); return; }
-    renderOffersCards('#offersList', data||[]);
-  }
-  function renderOffersCards(selector, list){
-    const wrap=document.querySelector(selector); if(!wrap) return;
-    if(!list.length){ wrap.innerHTML='<p class="text-center text-gray-500">لا توجد عروض حالياً</p>'; return; }
-    wrap.innerHTML = list.map(o=>`
-      <div class="border rounded-2xl overflow-hidden glass">
-        <div class="h-40 w-full overflow-hidden"><img src="${o.image_url||'https://placehold.co/800x400/png?text=Offer'}" class="w-full h-full object-cover" alt=""></div>
-        <div class="p-3">
-          <div class="font-bold">${o.title||'عرض'}</div>
-          ${o.description?`<div class="text-sm text-gray-600 mt-1 line-clamp-2">${o.description}</div>`:''}
-          <div class="flex items-center gap-3 mt-2">
-            ${o.price_after?`<span class="text-[var(--brand)] font-extrabold">${fmt(o.price_after)} ج.م</span>`:''}
-            ${o.price_before?`<span class="text-gray-500 line-through">${fmt(o.price_before)} ج.م</span>`:''}
-          </div>
-          <div class="mt-3">
-            <button class="px-3 py-1.5 rounded-lg bg-gradient-to-l from-[var(--brand)] to-[var(--brand-2)] text-white text-sm" onclick="showBookingWizard()">احجز الآن</button>
-          </div>
-        </div>
-      </div>`).join('');
-  }
-
-  /* ===== تقييمات (إصلاح التعارض بالتحديث إن وُجد) ===== */
-  async function getExistingRating(bookingId){
-    if(!currentUser) return null;
-    const { data, error } = await supabase
-      .from('ratings')
-      .select('id, stars, comment')
-      .eq('booking_id', bookingId)
-      .eq('customer_id', currentUser.id)
-      .maybeSingle();
-    if (error && error.code !== 'PGRST116') console.warn('getExistingRating', error);
-    return data || null;
-  }
-
-  // افتح مودال التقييم مع تعبئة القيم لو التقييم موجود
-  function rateBooking(id){
-    currentBookingId = id;
-    currentRating = 0;
-
-    const t = document.getElementById('ratingComment');
-    if (t) t.value = '';
-
-    getExistingRating(id).then(r => {
-      if (r){
-        if (t) t.value = r.comment || '';
-        setRating(r.stars || 0);
-      } else {
-        setRating(0);
-      }
-      const m=document.getElementById('ratingModal');
-      m?.classList.remove('hidden'); m?.classList.add('flex');
-    });
-  }
-
-  function setRating(r){
-    currentRating=r;
-    $$('.star-btn').forEach((btn,idx)=>{ if(idx<r){btn.classList.remove('text-gray-300');btn.classList.add('text-yellow-400');} else {btn.classList.remove('text-yellow-400');btn.classList.add('text-gray-300');} });
-  }
-
-  async function submitRating(){
-    if(!currentRating) return showNotification('يرجى اختيار عدد النجوم أولاً','warning');
-    if(!currentUser||!currentBookingId) return showNotification('لا يوجد حجز محدد','error');
-
-    // تحقق سريع: الحجز يخصّ المستخدم ومكتمل
-    try{
-      const { data: chkBook, error: chkErr } = await supabase
-        .from('bookings')
-        .select('id, customer_id, status')
-        .eq('id', currentBookingId)
-        .maybeSingle();
-      if (chkErr) return showNotification('تعذر التحقق من الحجز','error');
-      if (!chkBook || chkBook.customer_id !== currentUser.id)
-        return showNotification('لا يمكنك تقييم حجز لا يخصك','error');
-      if (chkBook.status !== 'completed')
-        return showNotification('يمكن تقييم الحجوزات المكتملة فقط','warning');
-    }catch(e){
-      console.error('pre-check failed', e);
-      return showNotification('تعذر التحقق من الحجز','error');
-    }
-
-    const comment = document.getElementById('ratingComment')?.value?.trim() || null;
-
-    try{
-      const existing = await getExistingRating(currentBookingId);
-      if (existing){
-        // تحديث التقييم الحالي
-        const { error: upErr } = await supabase
-          .from('ratings')
-          .update({ stars: currentRating, comment })
-          .eq('id', existing.id);
-        if (upErr) throw upErr;
-        showNotification('تم تحديث تقييمك','success');
-      } else {
-        // إدراج تقييم جديد
-        const { error: insErr } = await supabase
-          .from('ratings')
-          .insert({
-            booking_id:  currentBookingId,
-            customer_id: currentUser.id,
-            stars:       currentRating,
-            comment
-          });
-        if (insErr) throw insErr;
-        showNotification('تم إرسال التقييم','success');
-      }
-      closeModal('ratingModal');
-      await refreshDashboard();
-    }catch(e){
-      console.error('submitRating error:', e);
-      showNotification('تعذر إرسال/تحديث التقييم: ' + (e.message||''), 'error');
-    }
-  }
-
-  /* ===== إدارة (ستاف + بنرات) ===== */
-  async function renderAdminPanels(){
-    if (!currentUser?.is_admin) return;
-    const { data: staff } = await supabase.from('staff').select('id, full_name, avatar_url, avatar_emoji, experience_years').order('full_name');
-    const sWrap = document.getElementById('adminStaffList');
-    if (sWrap) {
-      sWrap.innerHTML = (staff||[]).map(st => `
-        <div class="border rounded-xl p-3 flex items-center gap-3">
-          ${st.avatar_url?`<img src="${st.avatar_url}" class="w-12 h-12 rounded-lg object-cover border" alt="${st.full_name}">`:`<div class="w-12 h-12 rounded-lg grid place-items-center bg-purple-50 text-2xl border">${st.avatar_emoji||'👤'}</div>`}
-          <div class="flex-1"><div class="font-semibold">${st.full_name}</div><div class="text-xs text-gray-600">خبرة ${st.experience_years} سنوات</div></div>
-          <input type="file" accept="image/*" class="text-xs" id="file-${st.id}">
-          <button class="px-3 py-1.5 rounded-lg bg-gradient-to-l from-[var(--brand)] to-[var(--brand-2)] text-white text-xs" onclick="adminUploadStaffAvatar('${st.id}')">رفع صورة</button>
-        </div>`).join('') || '<p class="text-gray-500">لا يوجد موظفون.</p>';
-    }
-
-    const { data: banners } = await supabase.from('banners').select('*').order('position');
-    const bWrap = document.getElementById('adminBannersList'); if (bWrap) {
-      bWrap.innerHTML = (banners||[]).map(b=>`
-        <div class="border rounded-xl p-3 flex items-center gap-3">
-          <img src="${b.image_url}" class="w-20 h-12 object-cover rounded-lg border" alt="">
-          <div class="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <input value="${b.title||''}" placeholder="عنوان" class="rounded-lg border-gray-300 text-sm input-pad py-1.5" id="b-title-${b.id}">
-            <input value="${b.link_url||''}" placeholder="رابط" class="rounded-lg border-gray-300 text-sm input-pad py-1.5" id="b-link-${b.id}">
-          </div>
-          <label class="flex items-center gap-2 text-sm"><input type="checkbox" ${b.active?'checked':''} id="b-active-${b.id}"> فعال</label>
-          <input type="number" class="w-20 rounded-lg border-gray-300 text-sm input-pad py-1.5" value="${b.position||0}" id="b-pos-${b.id}" title="الترتيب">
-          <button class="px-3 py-1.5 rounded-lg bg-gray-100 text-sm" onclick="adminUpdateBanner('${b.id}')">حفظ</button>
-          <button class="px-3 py-1.5 rounded-lg bg-red-100 text-red-700 text-sm" onclick="adminDeleteBanner('${b.id}')">حذف</button>
-        </div>`).join('') || '<p class="text-gray-500">لا توجد بنرات.</p>';
-    }
-  }
-  async function uploadPublicFile(bucket, file, pathPrefix=''){
-    const ext=(file.name.split('.').pop()||'jpg').toLowerCase();
-    const path=`${pathPrefix}${Date.now()}.${ext}`;
-    const { error: upErr } = await supabase.storage.from(bucket).upload(path, file, { upsert:true, contentType:file.type });
-    if (upErr) throw upErr;
-    const { data: pub } = supabase.storage.from(bucket).getPublicUrl(path);
-    return pub.publicUrl;
-  }
-  async function adminUploadStaffAvatar(staffId){
-    try{
-      const inp=document.getElementById(`file-${staffId}`); if(!inp?.files?.length) return showNotification('اختر صورة أولاً','warning');
-      const url=await uploadPublicFile(STAFF_BUCKET, inp.files[0], `${staffId}/`);
-      const { error } = await supabase.from('staff').update({ avatar_url: url }).eq('id', staffId);
-      if (error) throw error;
-      showNotification('تم رفع الصورة','success'); await renderAdminPanels();
-    }catch(e){ console.error(e); showNotification('فشل رفع الصورة','error'); }
-  }
-  async function adminAddBanner(){
-    try{
-      const f=document.getElementById('bannerFile'); if(!f?.files?.length) return showNotification('اختر صورة للبنر','warning');
-      const url=await uploadPublicFile(BANNERS_BUCKET, f.files[0], '');
-      const title=document.getElementById('bannerTitle')?.value?.trim()||null;
-      const link=document.getElementById('bannerLink')?.value?.trim()||null;
-      const { error }=await supabase.from('banners').insert({ image_url:url, title, link_url:link, active:true, position:0 });
-      if(error) throw error;
-      document.getElementById('bannerTitle').value=''; document.getElementById('bannerLink').value=''; f.value='';
-      showNotification('تم إضافة البنر','success'); await loadBannersFromDB(); await renderAdminPanels();
-    }catch(e){ console.error(e); showNotification('فشل إضافة البنر','error'); }
-  }
-  async function adminUpdateBanner(id){
-    try{
-      const title=document.getElementById(`b-title-${id}`)?.value?.trim()||null;
-      const link=document.getElementById(`b-link-${id}`)?.value?.trim()||null;
-      const active=document.getElementById(`b-active-${id}`)?.checked||false;
-      const pos=Number(document.getElementById(`b-pos-${id}`)?.value||0);
-      const { error }=await supabase.from('banners').update({ title, link_url:link, active, position:pos }).eq('id', id);
-      if(error) throw error;
-      showNotification('تم حفظ التعديلات','success'); await loadBannersFromDB();
-    }catch(e){ console.error(e); showNotification('تعذر الحفظ','error'); }
-  }
-  async function adminDeleteBanner(id){
-    if(!confirm('حذف هذا البنر نهائيًا؟')) return;
-    try{
-      const { error } = await supabase.from('banners').delete().eq('id', id);
-      if(error) throw error;
-      showNotification('تم حذف البنر','success'); await loadBannersFromDB(); await renderAdminPanels();
-    }catch(e){ console.error(e); showNotification('تعذر الحذف','error'); }
-  }
-
-  /* ===== بنرات (سلايدر) ===== */
-  async function loadBannersFromDB(){
-    const wrap = document.getElementById('bannersSwiperWrapper'); if (!wrap) return;
-    const { data } = await supabase.from('banners').select('id, image_url, title, link_url').eq('active', true).order('position');
-    const banners = data || [];
-    if (!banners.length) {
-      wrap.innerHTML = `<div class="swiper-slide"><div class="h-44 sm:h-64 bg-gradient-to-l from-[var(--brand)] to-[var(--brand-2)] grid place-items-center text-white"><div class="text-center"><div class="text-2xl font-extrabold">${salonInfo?.name || 'أهلاً بك'}</div><div class="opacity-90 mt-1">أضف بانراتك من تبويب الإدارة</div></div></div></div>`;
-    } else {
-      wrap.innerHTML = banners.map(b => `
-        <div class="swiper-slide">
-          ${b.link_url ? `<a href="${b.link_url}" target="_blank" rel="noopener">` : ``}
-          <div class="h-44 sm:h-64 overflow-hidden"><img src="${b.image_url}" class="w-full h-full object-cover" alt="${b.title||''}"></div>
-          ${b.link_url ? `</a>` : ``}
-        </div>`).join('');
-    }
-    setTimeout(()=> {
-      window.bannersSwiper && window.bannersSwiper.destroy?.(true,true);
-      window.bannersSwiper=new Swiper('.swiper',{loop:true,rtl:true,autoplay:{delay:3500},pagination:{el:'.swiper-pagination',clickable:true},navigation:{nextEl:'.swiper-button-next',prevEl:'.swiper-button-prev'}});
-    }, 0);
-  }
-
-  /* ===== فلترة حجوزاتي ===== */
-  function filterBookings(status){
-    const cards = $$('.booking-card'); if (!cards.length) return;
-    cards.forEach(card=>{ const s=card.getAttribute('data-status'); if(status==='all'||s===status) card.classList.remove('hidden'); else card.classList.add('hidden'); });
-    const btns=$$('.filter-btn'); btns.forEach(b=>b.classList.remove('bg-purple-100','text-[var(--brand)]'));
-    const map={all:0,pending:1,confirmed:2,completed:3,cancelled:4}; const idx=map[status]; if (btns[idx]) btns[idx].classList.add('bg-purple-100','text-[var(--brand)]');
-  }
-
-  /* ===== تحديث الملف الشخصي ===== */
-  async function updateProfile(){
-    if(!currentUser) return showNotification('سجّل دخول أولاً','error');
-
-    const btn   = document.getElementById('profileSaveBtn');
-    const full  = document.getElementById('profileName')?.value?.trim()  || null;
-    const phone = document.getElementById('profilePhone')?.value?.trim() || null;
-
-    try{
-      if (btn){ btn.disabled = true; btn.textContent = 'جاري الحفظ...'; }
-
-      // تحديث جدول customers (RLS يجب أن تسمح)
-      const { error: upErr } = await supabase
-        .from('customers')
-        .update({ full_name: full, phone })
-        .eq('id', currentUser.id);
-      if (upErr) throw upErr;
-
-      // تحديث بيانات auth (اختياري)
-      await supabase.auth.updateUser({ data: { full_name: full, phone } });
-
-      currentUser.full_name = full;
-      currentUser.phone     = phone;
-      const uname = document.getElementById('userName');
-      if (uname) uname.textContent = full || (authUser?.email || 'مستخدم');
-
-      showNotification('تم حفظ بياناتك بنجاح','success');
-    } catch(e){
-      console.error(e);
-      showNotification('تعذر حفظ البيانات: ' + (e.message || ''), 'error');
-    } finally{
-      if (btn){ btn.disabled = false; btn.textContent = 'حفظ التغييرات'; }
-    }
-  }
-
-  /* ===== أدوات عامة ===== */
-  function closeModal(id){ const m=document.getElementById(id); m?.classList.add('hidden'); m?.classList.remove('flex'); }
-  function showNotification(message,type='info'){
-    const container=document.getElementById('notifications'); if(!container) return;
-    const div=document.createElement('div'); const colors={success:'bg-green-600',error:'bg-red-600',warning:'bg-yellow-500',info:'bg-blue-600'};
-    div.className=`notification ${colors[type]} text-white px-4 py-3 rounded-lg shadow-lg max-w-sm`;
-    div.innerHTML=`<div class="flex items-center justify-between gap-4"><span>${message}</span><button onclick="this.closest('.notification').remove()" class="text-white/90 hover:text-white"><i class="fa-solid fa-xmark"></i></button></div>`;
-    container.appendChild(div); setTimeout(()=>{ if(div.parentElement) div.remove(); }, 4500);
-  }
-  </script>
-
-  <!--
-  ملاحظات:
-  - عدّل SUPABASE_URL و SUPABASE_ANON_KEY أعلاه.
-  - تمت إضافة Padding سفلي ديناميكي وSpacer لضمان ظهور الأزرار والمحتوى فوق شريط التنقل السفلي.
-  - تم نقل زر الإشعارات لأقصى اليسار مع Panel بعرض مناسب داخل الشاشة.
-  - تم إصلاح إرسال التقييم ليقوم بالتحديث إذا كان موجودًا مسبقًا.
-  -->
+        // استدعاء الدالة عند اكتمال تحميل الصفحة
+        document.addEventListener('DOMContentLoaded', loadSalonSettings);
+    </script>
 </body>
 </html>
