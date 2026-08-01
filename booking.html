@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>حجز موعد</title>
+    <!-- استدعاء خط Cairo وتطبيقه على كافة العناصر -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <style>
+        :root {
+            --primary-gold: #D4AF37;
+            --soft-pink: #F8E7E9;
+            --dark-black: #1A1A1A;
+            --pure-white: #FFFFFF;
+            --border-gray: #E0E0E0;
+            --text-gray: #4A4A4A;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Cairo', sans-serif; }
+        
+        body { background-color: var(--soft-pink); color: var(--dark-black); padding-bottom: 50px; }
+
+        /* الهيدر المتناسق مع الرئيسية */
+        header {
+            background-color: var(--pure-white);
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            margin-bottom: 30px;
+        }
+        .logo-container { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+        .logo-container img { height: 40px; display: none; }
+        .logo-container h2 { font-size: 1.2rem; color: var(--primary-gold); font-weight: 700; }
+        .back-btn { text-decoration: none; color: var(--text-gray); font-weight: 600; font-size: 0.9rem; }
+
+        /* حاوية الحجز */
+        .booking-container {
+            background: var(--pure-white);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .booking-container h2 { color: var(--primary-gold); text-align: center; margin-bottom: 25px; }
+
+        .form-section {
+            background: #FAFAFA;
+            border: 1px solid var(--border-gray);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+
+        .form-section h3 { font-size: 1.1rem; margin-bottom: 15px; color: var(--dark-black); }
+
+        input[type="text"], input[type="tel"], input[type="date"] {
+            width: 100%; padding: 12px; border: 1px solid var(--border-gray); 
+            border-radius: 10px; font-family: 'Cairo', sans-serif; font-size: 1rem;
+            margin-bottom: 10px;
+        }
+
+        /* شبكة الكروت (الخدمات، الموظفين، الأوقات) */
+        .grid-options { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+        
+        .card-option {
+            border: 2px solid var(--border-gray);
+            border-radius: 10px;
+            padding: 15px 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: var(--pure-white);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .card-option:hover { border-color: #e8c96b; }
+        .card-option.selected { border-color: var(--primary-gold); background: #FCF9EE; transform: scale(1.02); }
+        .card-option.disabled { opacity: 0.5; pointer-events: none; background: #f5f5f5; text-decoration: line-through; }
+        
+        .staff-img { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; margin-bottom: 10px; border: 2px solid var(--soft-pink); }
+
+        .total-box {
+            text-align: center; font-size: 1.3rem; font-weight: bold; color: var(--dark-black);
+            margin: 20px 0; padding: 15px; background: var(--soft-pink); border-radius: 10px;
+        }
+
+        .submit-btn {
+            width: 100%; padding: 15px; background: var(--primary-gold); color: white;
+            border: none; border-radius: 10px; font-size: 1.1rem; font-weight: bold; cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .submit-btn:active { transform: scale(0.98); }
+        .submit-btn:disabled { opacity: 0.7; cursor: not-allowed; }
+
+        #success-msg { display: none; text-align: center; background: #E8F5E9; color: #2E7D32; padding: 20px; border-radius: 10px; font-weight: bold; margin-top: 20px; border: 1px solid #C8E6C9; }
+        
+        .empty-state { grid-column: 1/-1; text-align: center; color: #888; font-size: 0.95rem; padding: 10px; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="index.html" class="logo-container">
+            <img id="dynamic-logo" src="" alt="شعار الصالون">
+            <h2 id="dynamic-salon-name">تحميل...</h2>
+        </a>
+        <a href="index.html" class="back-btn">رجوع للرئيسية ↩</a>
+    </header>
+
+    <div class="booking-container">
+        <h2>احجزي موعدكِ</h2>
+        <form id="booking-form">
+            
+            <div class="form-section">
+                <h3>1. بياناتكِ الشخصية</h3>
+                <input type="text" id="customer_name" placeholder="الاسم الكريم" required>
+                <input type="tel" id="customer_phone" placeholder="رقم الجوال (مثال: 9665...)" required>
+            </div>
+
+            <div class="form-section">
+                <h3>2. اختاري الخدمات</h3>
+                <div class="grid-options" id="services-container">
+                    <div class="empty-state">جاري تحميل الخدمات...</div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3>3. حددي تاريخ الحجز</h3>
+                <!-- سيتم برمجياً منع اختيار تواريخ سابقة -->
+                <input type="date" id="booking_date" required>
+            </div>
+
+            <div class="form-section">
+                <h3>4. اختاري الخبيرة المتاحة</h3>
+                <div class="grid-options" id="staff-container">
+                    <div class="empty-state">الرجاء تحديد التاريخ أولاً لظهور الخبيرات</div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3>5. الأوقات المتاحة</h3>
+                <div class="grid-options" id="time-container">
+                    <div class="empty-state">الرجاء تحديد التاريخ والخبير أولاً</div>
+                </div>
+            </div>
+
+            <div class="total-box">الإجمالي: <span id="total-price">0</span> ريال</div>
+            
+            <button type="submit" class="submit-btn" id="submit-btn">تأكيد الحجز</button>
+            <div id="success-msg">
+                🎉 تم تسجيل حجزك بنجاح!<br>
+                <small style="font-weight: normal; margin-top: 5px; display: block;">جاري إرسال رسالة واتساب بالتفاصيل...</small>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        // ==========================================
+        // 1. الإعدادات والروابط (ضع روابطك هنا)
+        // ==========================================
+        const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+        const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+        // استخدام var لتجنب خطأ التكرار في المتصفح
+        var supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const EVOLUTION_API_URL = 'YOUR_EVOLUTION_API_URL/message/sendText/YOUR_INSTANCE_NAME';
+        const EVOLUTION_API_KEY = 'YOUR_EVOLUTION_API_KEY';
+
+        // المتغيرات لحفظ الاختيارات
+        let selectedServices = [];
+        let selectedStaffId = null;
+        let selectedTime = null;
+        let totalPrice = 0;
+        let maxBookingsPerHour = 2; // قيمة افتراضية
+
+        // ==========================================
+        // 2. تهيئة الصفحة وجلب البيانات الأساسية
+        // ==========================================
+        document.addEventListener("DOMContentLoaded", async () => {
+            setupDateInput();
+            await loadSettingsAndServices();
+        });
+
+        // ضبط حقل التاريخ لمنع التواريخ السابقة بدقة
+        function setupDateInput() {
+            const dateInput = document.getElementById('booking_date');
+            const today = new Date();
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            // تحويل التاريخ للصيغة الصحيحة YYYY-MM-DD
+            const minDate = tomorrow.toISOString().split('T')[0];
+            dateInput.min = minDate;
+        }
+
+        async function loadSettingsAndServices() {
+            try {
+                // جلب إعدادات الصالون (الاسم، الشعار، الحد الأقصى للحجوزات)
+                const { data: settings } = await supabase.from('salon_settings').select('*').limit(1).single();
+                if (settings) {
+                    document.getElementById('dynamic-salon-name').innerText = settings.salon_name || 'صالون تجميل';
+                    document.title = 'حجز موعد | ' + (settings.salon_name || '');
+                    if (settings.logo_url) {
+                        const logo = document.getElementById('dynamic-logo');
+                        logo.src = settings.logo_url;
+                        logo.style.display = 'block';
+                    }
+                    if (settings.max_bookings_per_hour) {
+                        maxBookingsPerHour = settings.max_bookings_per_hour;
+                    }
+                }
+
+                // جلب الخدمات
+                const { data: services } = await supabase.from('services').select('*').order('id', { ascending: true });
+                const servicesContainer = document.getElementById('services-container');
+                servicesContainer.innerHTML = ''; // مسح حالة التحميل
+                
+                if(services && services.length > 0) {
+                    services.forEach(srv => {
+                        const div = document.createElement('div');
+                        div.className = 'card-option';
+                        div.innerHTML = `<strong style="font-size:1.1rem; color:var(--dark-black);">${srv.name}</strong><small style="color:var(--text-gray); margin-top:5px;">${srv.price} ريال</small>`;
+                        div.onclick = () => toggleService(div, srv);
+                        servicesContainer.appendChild(div);
+                    });
+                } else {
+                    servicesContainer.innerHTML = '<div class="empty-state">لا توجد خدمات متاحة حالياً.</div>';
+                }
+            } catch (error) {
+                console.error("خطأ في جلب البيانات الأولية:", error);
+            }
+        }
+
+        function toggleService(element, service) {
+            element.classList.toggle('selected');
+            const index = selectedServices.findIndex(s => s.id === service.id);
+            if (index > -1) {
+                selectedServices.splice(index, 1);
+                totalPrice -= parseFloat(service.price);
+            } else {
+                selectedServices.push(service);
+                totalPrice += parseFloat(service.price);
+            }
+            document.getElementById('total-price').innerText = totalPrice;
+        }
+
+        // ==========================================
+        // 3. المنطق الذكي عند اختيار التاريخ
+        // ==========================================
+        document.getElementById('booking_date').addEventListener('change', async (e) => {
+            const date = e.target.value;
+            const staffContainer = document.getElementById('staff-container');
+            const timeContainer = document.getElementById('time-container');
+            
+            staffContainer.innerHTML = '<div class="empty-state">جاري فحص المتاحين...</div>';
+            timeContainer.innerHTML = '<div class="empty-state">الرجاء تحديد الخبير أولاً</div>';
+            
+            selectedStaffId = null;
+            selectedTime = null;
+
+            if (!date) return;
+
+            try {
+                // جلب جميع الموظفين
+                const { data: staff } = await supabase.from('staff').select('*');
+                // جلب الإجازات في هذا التاريخ المحدد فقط لفلترة الغائبين
+                const { data: leaves } = await supabase.from('staff_leaves').select('staff_id').eq('leave_date', date);
+                const leaveIds = leaves ? leaves.map(l => l.staff_id) : [];
+                
+                staffContainer.innerHTML = '';
+                let availableStaffCount = 0;
+
+                if (staff) {
+                    staff.forEach(st => {
+                        if (!leaveIds.includes(st.id)) {
+                            availableStaffCount++;
+                            const div = document.createElement('div');
+                            div.className = 'card-option';
+                            div.innerHTML = `<img src="${st.photo_url || 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png'}" class="staff-img"><span style="font-weight:600;">${st.name}</span>`;
+                            
+                            div.onclick = () => {
+                                document.querySelectorAll('#staff-container .card-option').forEach(el => el.classList.remove('selected'));
+                                div.classList.add('selected');
+                                selectedStaffId = st.id;
+                                // تحميل الأوقات بعد اختيار الموظف
+                                loadAvailableTimes(date);
+                            };
+                            staffContainer.appendChild(div);
+                        }
+                    });
+                }
+
+                if (availableStaffCount === 0) {
+                    staffContainer.innerHTML = '<div class="empty-state">نعتذر، لا يوجد خبراء متاحين في هذا التاريخ.</div>';
+                }
+            } catch (error) {
+                console.error("خطأ في جلب الموظفين:", error);
+            }
+        });
+
+        // ==========================================
+        // 4. توليد الأوقات المتاحة وحساب السعة الاستيعابية
+        // ==========================================
+        async function loadAvailableTimes(date) {
+            const timeContainer = document.getElementById('time-container');
+            timeContainer.innerHTML = '<div class="empty-state">جاري تجهيز الأوقات...</div>';
+            selectedTime = null;
+
+            try {
+                // الساعات المعطلة من الإدارة في هذا اليوم
+                const { data: blocked } = await supabase.from('blocked_hours').select('blocked_time').eq('blocked_date', date);
+                const blockedTimes = blocked ? blocked.map(b => b.blocked_time.substring(0,5)) : [];
+                
+                // حساب الحجوزات الموجودة مسبقاً في هذا اليوم
+                const { data: bookings } = await supabase.from('bookings').select('booking_time').eq('booking_date', date);
+                const bookingCounts = {};
+                if(bookings) {
+                    bookings.forEach(b => {
+                        const t = b.booking_time.substring(0,5);
+                        bookingCounts[t] = (bookingCounts[t] || 0) + 1;
+                    });
+                }
+
+                timeContainer.innerHTML = '';
+                // ساعات العمل (من 1 ظهرًا إلى 10 مساءً كمثال، يمكنك تعديلها)
+                const workingHours = ['13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00'];
+                
+                workingHours.forEach(time => {
+                    const div = document.createElement('div');
+                    div.className = 'card-option';
+                    
+                    let isBlocked = blockedTimes.includes(time);
+                    let isFull = (bookingCounts[time] || 0) >= maxBookingsPerHour;
+
+                    if (isBlocked || isFull) {
+                        div.classList.add('disabled');
+                        div.innerHTML = `<span style="font-size:1.1rem;">${time}</span><small style="color:#d32f2f; margin-top:5px; font-weight:bold;">محجوز</small>`;
+                    } else {
+                        div.innerHTML = `<span style="font-size:1.1rem; font-weight:600;">${time}</span>`;
+                        div.onclick = () => {
+                            document.querySelectorAll('#time-container .card-option').forEach(el => el.classList.remove('selected'));
+                            div.classList.add('selected');
+                            selectedTime = time + ':00'; // إضافة الثواني لتتوافق مع نوع TIME في قاعدة البيانات
+                        };
+                    }
+                    timeContainer.appendChild(div);
+                });
+
+            } catch (error) {
+                console.error("خطأ في جلب الأوقات:", error);
+            }
+        }
+
+        // ==========================================
+        // 5. تأكيد الحجز والربط مع واتساب
+        // ==========================================
+        document.getElementById('booking-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (selectedServices.length === 0) { alert('الرجاء اختيار خدمة واحدة على الأقل.'); return; }
+            if (!selectedStaffId) { alert('الرجاء اختيار الخبيرة.'); return; }
+            if (!selectedTime) { alert('الرجاء تحديد وقت الحجز.'); return; }
+
+            const btn = document.getElementById('submit-btn');
+            btn.innerText = 'جاري تأكيد حجزك... ⏳';
+            btn.disabled = true;
+
+            const name = document.getElementById('customer_name').value.trim();
+            const phone = document.getElementById('customer_phone').value.trim();
+            const date = document.getElementById('booking_date').value;
+
+            try {
+                // أ. الإدخال في قاعدة بيانات Supabase
+                const { error } = await supabase.from('bookings').insert([{
+                    customer_name: name,
+                    phone: phone,
+                    booking_date: date,
+                    booking_time: selectedTime,
+                    total_price: totalPrice,
+                    services_ids: selectedServices,
+                    staff_id: selectedStaffId
+                }]);
+
+                if (error) throw error;
+
+                // إخفاء الفورم وإظهار رسالة النجاح
+                document.getElementById('booking-form').style.display = 'none';
+                document.getElementById('success-msg').style.display = 'block';
+
+                // ب. إرسال رسالة تأكيد عبر واتساب (Evolution API)
+                // يتم تنفيذها في الخلفية حتى لا تعطل واجهة المستخدم
+                sendWhatsAppConfirmation(name, phone, date, selectedTime, selectedServices, totalPrice);
+
+            } catch (error) {
+                console.error("خطأ أثناء الحفظ:", error);
+                alert('عذراً، حدث خطأ أثناء الحجز. يرجى المحاولة مرة أخرى.');
+                btn.innerText = 'تأكيد الحجز';
+                btn.disabled = false;
+            }
+        });
+
+        // دالة منفصلة لإرسال الواتساب
+        async function sendWhatsAppConfirmation(name, phone, date, time, services, price) {
+            try {
+                const serviceNames = services.map(s => s.name).join('، ');
+                const whatsappMsg = `أهلاً بكِ ${name} ✨\nتم تأكيد حجزك بنجاح.\n\nالخدمات: ${serviceNames}\nالتاريخ: ${date}\nالوقت: ${time.substring(0,5)}\nالإجمالي: ${price} ريال.\n\nننتظرك بكل حب! 💖`;
+
+                await fetch(EVOLUTION_API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'apikey': EVOLUTION_API_KEY
+                    },
+                    body: JSON.stringify({
+                        number: phone,
+                        text: whatsappMsg
+                    })
+                });
+            } catch (apiError) {
+                console.error("لم يتم إرسال رسالة الواتساب:", apiError);
+            }
+        }
+    </script>
+</body>
+</html>
