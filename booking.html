@@ -31,7 +31,8 @@
         .booking-container { background: var(--pure-white); padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); max-width: 700px; margin: 0 auto; }
         
         /* Progress Steps */
-        .progress-container { display: flex; justify-content: space-between; margin-bottom: 30px; position: relative; }
+        /* تم زيادة المسافة السفلية (margin-bottom) إلى 60px لمنع التداخل مع العناوين */
+        .progress-container { display: flex; justify-content: space-between; margin-bottom: 60px; position: relative; }
         .progress-container::before { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 3px; background: var(--border-gray); z-index: 1; transform: translateY(-50%); }
         .step-circle { width: 35px; height: 35px; border-radius: 50%; background: var(--border-gray); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; z-index: 2; transition: 0.3s; position: relative; }
         .step-circle.active { background: var(--primary-gold); box-shadow: 0 0 10px rgba(212, 175, 55, 0.5); }
@@ -121,15 +122,10 @@
             <div class="step-content" id="step-2">
                 <h3 class="step-title">اختيار الخدمات</h3>
                 
-                <div class="categories-tabs" id="categories-container">
-                    <!-- سيتم جلب التصنيفات هنا -->
-                </div>
+                <div class="categories-tabs" id="categories-container"></div>
 
-                <div class="grid-options" id="services-grid">
-                    <!-- سيتم عرض خدمات التصنيف المختار هنا -->
-                </div>
+                <div class="grid-options" id="services-grid"></div>
 
-                <!-- سلة الخدمات المختارة -->
                 <div class="cart-section">
                     <h4>الخدمات المطلوبة:</h4>
                     <table class="cart-table" id="cart-table">
@@ -157,9 +153,7 @@
             <!-- Step 4: Time -->
             <div class="step-content" id="step-4">
                 <h3 class="step-title">اختيار وقت الحجز</h3>
-                <div class="grid-options" id="time-container">
-                    <!-- سيتم جلب الأوقات المتاحة هنا بناءً على التاريخ والفنية -->
-                </div>
+                <div class="grid-options" id="time-container"></div>
             </div>
 
             <!-- Step 5: Review & Confirm -->
@@ -167,7 +161,7 @@
                 <h3 class="step-title">مراجعة بيانات الحجز</h3>
                 <div class="review-box">
                     <div class="review-item"><span class="review-label">الاسم:</span><span class="review-value" id="rev-name"></span></div>
-                    <div class="review-item"><span class="review-label">رقم الجوال:</span><span class="review-value" id="rev-phone"></span></div>
+                    <div class="review-item"><span class="review-label">رقم الجوال:</span><span class="review-value" id="rev-phone" dir="ltr"></span></div>
                     <div class="review-item"><span class="review-label">التاريخ:</span><span class="review-value" id="rev-date"></span></div>
                     <div class="review-item"><span class="review-label">الوقت:</span><span class="review-value" id="rev-time"></span></div>
                     <div class="review-item"><span class="review-label">الخبيرة:</span><span class="review-value" id="rev-staff"></span></div>
@@ -194,30 +188,26 @@
     <!-- رسالة النجاح -->
     <div id="success-msg">
         <h2 style="margin-bottom: 15px;">🎉 تم تسجيل حجزك بنجاح!</h2>
-        <p>جاري إرسال بيانات الحجز والتأكيد في رسالة واتساب على رقمك.</p>
         <br>
         <a href="index.html" style="color: var(--primary-gold); text-decoration: underline;">العودة للصفحة الرئيسية</a>
     </div>
 
     <script>
-        // --- 1. إعدادات قاعدة البيانات ---
         var SUPABASE_URL = 'https://xdusjjrslfslakcovrkf.supabase.co';
         var SUPABASE_ANON_KEY = 'sb_publishable_o2oaEWqE-PJzWjqe6eDq9A_OTwi5Wg6';
         var supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // --- 2. المتغيرات العامة ---
         let currentStep = 1;
         let allServices = [];
         let categories = [];
-        let selectedServices = []; // Cart
-        let selectedStaff = null; // Object {id, name}
+        let selectedServices = []; 
+        let selectedStaff = null; 
         let selectedTime = null;
         let totalPrice = 0;
         let maxBookingsPerHour = 2;
         let salonCurrency = 'ج.م';
         let evoSettings = {};
 
-        // --- 3. تهيئة النظام عند التحميل ---
         document.addEventListener("DOMContentLoaded", async () => {
             setupDateInput();
             await fetchInitialData();
@@ -230,9 +220,19 @@
             dateInput.min = tomorrow.toISOString().split('T')[0];
         }
 
+        // دالة مساعدة لتنسيق رقم الجوال لمصر
+        function formatEgyptianPhone(phoneStr) {
+            let cleanPhone = phoneStr.replace(/\D/g, ''); // إزالة المسافات أو الرموز
+            if (cleanPhone.startsWith('0')) {
+                cleanPhone = '2' + cleanPhone; // تحويل 010... إلى 2010...
+            } else if (!cleanPhone.startsWith('20') && cleanPhone.length >= 10) {
+                cleanPhone = '20' + cleanPhone; // إضافة المفتاح إذا لم يكتبه العميل
+            }
+            return cleanPhone;
+        }
+
         async function fetchInitialData() {
             try {
-                // جلب الإعدادات
                 const { data: settings } = await supabase.from('salon_settings').select('*').limit(1).single();
                 if (settings) {
                     document.getElementById('dynamic-salon-name').innerText = settings.salon_name || '';
@@ -250,18 +250,15 @@
                     };
                 }
 
-                // جلب الخدمات والتصنيفات
                 const { data: services } = await supabase.from('services').select('*').order('category', { ascending: true });
                 if(services) {
                     allServices = services;
-                    // استخراج التصنيفات الفريدة (حتى لو لم يكن هناك عمود تصنيف، سنعتبره 'عام')
                     categories = [...new Set(services.map(s => s.category || 'عام'))];
                     renderCategories();
                 }
             } catch (error) { console.error("Error:", error); }
         }
 
-        // --- 4. منطق التصنيفات والخدمات (الخطوة 2) ---
         function renderCategories() {
             const container = document.getElementById('categories-container');
             container.innerHTML = '';
@@ -277,7 +274,6 @@
                 };
                 container.appendChild(btn);
             });
-            // عرض خدمات أول تصنيف افتراضياً
             if(categories.length > 0) renderServicesByCat(categories[0]);
         }
 
@@ -289,7 +285,6 @@
             filtered.forEach(srv => {
                 const div = document.createElement('div');
                 div.className = 'card-option';
-                // إذا كانت الخدمة مختارة مسبقاً، اجعلها مميزة
                 if(selectedServices.some(s => s.id === srv.id)) div.classList.add('selected');
                 
                 div.innerHTML = `<strong>${srv.name}</strong><br><small>${srv.price} ${salonCurrency}</small>`;
@@ -316,7 +311,6 @@
         function removeServiceFromCart(serviceId) {
             const service = selectedServices.find(s => s.id === serviceId);
             if(service) toggleServiceSelection(service);
-            // إعادة رسم شبكة الخدمات لتحديث التظليل
             const activeCatBtn = document.querySelector('.cat-btn.active');
             if(activeCatBtn) renderServicesByCat(activeCatBtn.innerText);
         }
@@ -341,7 +335,6 @@
             document.getElementById('cart-total').innerText = totalPrice;
         }
 
-        // --- 5. منطق التاريخ والفنية (الخطوة 3) ---
         document.getElementById('booking_date').addEventListener('change', async (e) => {
             const date = e.target.value;
             const staffContainer = document.getElementById('staff-container');
@@ -377,7 +370,6 @@
             if (count === 0) staffContainer.innerHTML = '<div style="grid-column: 1/-1; color:red;">نعتذر، لا توجد خبيرات متاحات في هذا التاريخ.</div>';
         });
 
-        // --- 6. منطق الوقت (الخطوة 4) ---
         async function loadAvailableTimes() {
             const date = document.getElementById('booking_date').value;
             const timeContainer = document.getElementById('time-container');
@@ -414,9 +406,7 @@
             });
         }
 
-        // --- 7. منطق التنقل بين الخطوات (Wizard) والمراجعة ---
         function nextStep() {
-            // Validation قبل الانتقال
             if (currentStep === 1) {
                 if (!document.getElementById('customer_name').value || !document.getElementById('customer_phone').value) {
                     alert('الرجاء إدخال الاسم ورقم الجوال.'); return;
@@ -429,13 +419,12 @@
                 if (!document.getElementById('booking_date').value || !selectedStaff) {
                     alert('الرجاء اختيار التاريخ وتحديد الخبيرة.'); return;
                 }
-                // تحميل الأوقات قبل الانتقال للخطوة 4
                 loadAvailableTimes();
             } else if (currentStep === 4) {
                 if (!selectedTime) {
                     alert('الرجاء تحديد وقت الحجز.'); return;
                 }
-                prepareReviewScreen(); // تجهيز شاشة المراجعة
+                prepareReviewScreen();
             }
 
             document.getElementById(`step-${currentStep}`).classList.remove('active');
@@ -476,8 +465,12 @@
         }
 
         function prepareReviewScreen() {
+            // تنسيق الرقم قبل العرض ليتأكد العميل منه
+            let rawPhone = document.getElementById('customer_phone').value;
+            let formattedDisplayPhone = formatEgyptianPhone(rawPhone);
+
             document.getElementById('rev-name').innerText = document.getElementById('customer_name').value;
-            document.getElementById('rev-phone').innerText = document.getElementById('customer_phone').value;
+            document.getElementById('rev-phone').innerText = `+${formattedDisplayPhone}`;
             document.getElementById('rev-date').innerText = document.getElementById('booking_date').value;
             document.getElementById('rev-time').innerText = selectedTime.substring(0,5);
             document.getElementById('rev-staff').innerText = selectedStaff.name;
@@ -487,19 +480,19 @@
             document.getElementById('rev-total').innerText = totalPrice;
         }
 
-        // --- 8. الإرسال (Submit) و الواتساب ---
         document.getElementById('wizard-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = document.getElementById('btn-submit');
             btn.innerText = 'جاري التأكيد... ⏳'; btn.disabled = true; document.getElementById('btn-prev').disabled = true;
 
             const name = document.getElementById('customer_name').value;
-            const phone = document.getElementById('customer_phone').value;
+            const rawPhone = document.getElementById('customer_phone').value;
+            const formattedPhone = formatEgyptianPhone(rawPhone); // تطبيق التنسيق الصحيح قبل الحفظ
             const date = document.getElementById('booking_date').value;
 
             try {
                 const { error } = await supabase.from('bookings').insert([{
-                    customer_name: name, phone: phone, booking_date: date, booking_time: selectedTime,
+                    customer_name: name, phone: formattedPhone, booking_date: date, booking_time: selectedTime,
                     total_price: totalPrice, services_ids: selectedServices, staff_id: selectedStaff.id
                 }]);
                 if (error) throw error;
@@ -508,7 +501,7 @@
                 document.getElementById('success-msg').style.display = 'block';
 
                 if (evoSettings.url && !evoSettings.instance.includes('YOUR')) {
-                    sendWhatsApp(name, phone, date, selectedTime, selectedServices, totalPrice);
+                    sendWhatsApp(name, formattedPhone, date, selectedTime, selectedServices, totalPrice);
                 }
             } catch (err) {
                 alert('حدث خطأ. حاول مرة أخرى.');
