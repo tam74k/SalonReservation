@@ -31,7 +31,7 @@
 
         .form-section { background: #FAFAFA; border: 1px solid var(--border-gray); padding: 20px; border-radius: 15px; margin-bottom: 20px; }
         .form-section h3 { font-size: 1.1rem; margin-bottom: 15px; color: var(--dark-black); }
-        input[type="text"], input[type="tel"], input[type="date"] { width: 100%; padding: 12px; border: 1px solid var(--border-gray); border-radius: 10px; font-family: 'Cairo', sans-serif; font-size: 1rem; margin-bottom: 10px; }
+        input[type="text"], input[type="tel"], input[type="date"] { width: 100%; padding: 12px; border: 1px solid var(--border-gray); border-radius: 10px; font-size: 1rem; margin-bottom: 10px; }
 
         .grid-options { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
         .card-option { border: 2px solid var(--border-gray); border-radius: 10px; padding: 15px 10px; text-align: center; cursor: pointer; transition: all 0.3s ease; background: var(--pure-white); display: flex; flex-direction: column; align-items: center; justify-content: center; }
@@ -67,7 +67,7 @@
             <div class="form-section">
                 <h3>1. بياناتكِ الشخصية</h3>
                 <input type="text" id="customer_name" placeholder="الاسم الكريم" required>
-                <input type="tel" id="customer_phone" placeholder="رقم الجوال" required>
+                <input type="tel" id="customer_phone" placeholder="رقم الجوال (مثال: 010...)" required>
             </div>
 
             <div class="form-section">
@@ -99,11 +99,13 @@
             <div class="total-box">الإجمالي: <span id="total-price">0</span> <span id="currency-symbol">ج.م</span></div>
             
             <button type="submit" class="submit-btn" id="submit-btn">تأكيد الحجز</button>
-            <div id="success-msg">
-                🎉 تم تسجيل حجزك بنجاح!<br>
-                <small style="font-weight: normal; margin-top: 5px; display: block;">جاري إرسال رسالة واتساب بالتفاصيل...</small>
-            </div>
         </form>
+
+        <!-- رسالة النجاح ستظهر هنا بعد الدفع/التأكيد -->
+        <div id="success-msg">
+            🎉 تم تسجيل حجزك بنجاح!<br>
+            <small style="font-weight: normal; margin-top: 5px; display: block;">جاري إرسال بيانات الحجز في رسالة واتساب...</small>
+        </div>
     </div>
 
     <script>
@@ -112,30 +114,30 @@
         var SUPABASE_ANON_KEY = 'sb_publishable_o2oaEWqE-PJzWjqe6eDq9A_OTwi5Wg6';
         var supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // بيانات API الواتساب (يمكنك إضافتها لاحقاً عندما تجهز)
-        var EVOLUTION_API_URL = 'YOUR_EVOLUTION_API_URL';
-        var EVOLUTION_API_KEY = 'YOUR_EVOLUTION_API_KEY';
-
         let selectedServices = [];
         let selectedStaffId = null;
         let selectedTime = null;
         let totalPrice = 0;
         let maxBookingsPerHour = 2;
-        let salonCurrency = 'ج.م'; // العملة الافتراضية للصالون
+        let salonCurrency = 'ج.م'; 
+        
+        // متغيرات Evolution API التي سيتم جلبها من قاعدة البيانات
+        let evoApiUrl = '';
+        let evoInstance = '';
+        let evoApiKey = '';
+        let whatsappTemplate = '';
 
         document.addEventListener("DOMContentLoaded", async () => {
             setupDateInput();
             await loadSettingsAndServices();
         });
 
-        // منع اختيار تواريخ سابقة
         function setupDateInput() {
             const dateInput = document.getElementById('booking_date');
             const today = new Date();
             const tomorrow = new Date(today);
             tomorrow.setDate(tomorrow.getDate() + 1);
-            const minDate = tomorrow.toISOString().split('T')[0];
-            dateInput.min = minDate;
+            dateInput.min = tomorrow.toISOString().split('T')[0];
         }
 
         async function loadSettingsAndServices() {
@@ -151,11 +153,16 @@
                     }
                     if (settings.max_bookings_per_hour) maxBookingsPerHour = settings.max_bookings_per_hour;
                     
-                    // جلب العملة من الإعدادات
                     if (settings.currency) {
                         salonCurrency = settings.currency;
                         document.getElementById('currency-symbol').innerText = salonCurrency;
                     }
+
+                    // تخزين إعدادات الواتساب من قاعدة البيانات
+                    evoApiUrl = settings.evo_api_url;
+                    evoInstance = settings.evo_instance_name;
+                    evoApiKey = settings.evo_api_key;
+                    whatsappTemplate = settings.whatsapp_msg_template;
                 }
 
                 const { data: services } = await supabase.from('services').select('*').order('id', { ascending: true });
@@ -290,6 +297,7 @@
             const date = document.getElementById('booking_date').value;
 
             try {
+                // 1. تسجيل الحجز في قاعدة البيانات
                 const { error } = await supabase.from('bookings').insert([{
                     customer_name: name, phone: phone, booking_date: date, booking_time: selectedTime,
                     total_price: totalPrice, services_ids: selectedServices, staff_id: selectedStaffId
@@ -297,10 +305,15 @@
 
                 if (error) throw error;
 
+                // 2. إخفاء الفورم وإظهار رسالة النجاح فوراً
                 document.getElementById('booking-form').style.display = 'none';
                 document.getElementById('success-msg').style.display = 'block';
 
-                sendWhatsAppConfirmation(name, phone, date, selectedTime, selectedServices, totalPrice);
+                // 3. إرسال الواتساب في الخلفية عبر Evolution API (إذا تم إعدادها)
+                if (evoApiUrl && evoInstance && evoApiKey && !evoInstance.includes('YOUR_INSTANCE')) {
+                    sendWhatsAppConfirmation(name, phone, date, selectedTime, selectedServices, totalPrice);
+                }
+                
             } catch (error) {
                 alert('عذراً، حدث خطأ أثناء الحجز. يرجى المحاولة مرة أخرى.');
                 btn.innerText = 'تأكيد الحجز'; btn.disabled = false;
@@ -309,17 +322,33 @@
 
         async function sendWhatsAppConfirmation(name, phone, date, time, services, price) {
             try {
-                if (EVOLUTION_API_URL === 'YOUR_EVOLUTION_API_URL') return; // لا ترسل إذا لم يتم تعيين الـ API بعد
-
                 const serviceNames = services.map(s => s.name).join('، ');
-                const whatsappMsg = `أهلاً بكِ ${name} ✨\nتم تأكيد حجزك بنجاح.\n\nالخدمات: ${serviceNames}\nالتاريخ: ${date}\nالوقت: ${time.substring(0,5)}\nالإجمالي: ${price} ${salonCurrency}.\n\nننتظرك بكل حب! 💖`;
+                const formattedTime = time.substring(0, 5);
+                
+                // تجهيز الرسالة باستخدام المتغيرات الموجودة في قاعدة البيانات
+                let whatsappMsg = whatsappTemplate || 'تم تأكيد حجزك.';
+                
+                // دالة استبدال الديناميكي
+                whatsappMsg = whatsappMsg.replace(/{name}/g, name)
+                                         .replace(/{services}/g, serviceNames)
+                                         .replace(/{date}/g, date)
+                                         .replace(/{time}/g, formattedTime)
+                                         .replace(/{price}/g, price)
+                                         .replace(/{currency}/g, salonCurrency);
 
-                await fetch(EVOLUTION_API_URL, {
+                // تجهيز رابط الـ API بشكل صحيح
+                let baseUrl = evoApiUrl.endsWith('/') ? evoApiUrl.slice(0, -1) : evoApiUrl;
+                let fullApiUrl = `${baseUrl}/message/sendText/${evoInstance}`;
+
+                // إرسال الطلب (POST)
+                await fetch(fullApiUrl, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'apikey': EVOLUTION_API_KEY },
+                    headers: { 'Content-Type': 'application/json', 'apikey': evoApiKey },
                     body: JSON.stringify({ number: phone, text: whatsappMsg })
                 });
-            } catch (apiError) {}
+            } catch (apiError) {
+                console.error("خطأ في ربط الواتساب:", apiError);
+            }
         }
     </script>
 </body>
