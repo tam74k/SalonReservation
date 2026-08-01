@@ -507,9 +507,9 @@
 
         // دالة الإرسال المطابقة للـ curl المطلوب
        // دالة الإرسال المطابقة للـ curl المطلوب مع كشف الأخطاء
-        async function sendWhatsApp(name, phone, date, time, services, price) {
+       async function sendWhatsApp(name, phone, date, time, services, price) {
             try {
-                // استبدال المتغيرات في الرسالة
+                // 1. استبدال المتغيرات في الرسالة
                 let msg = evoSettings.template || 'تم الحجز بنجاح.';
                 msg = msg.replace(/{name}/g, name)
                          .replace(/{services}/g, services.map(s=>s.name).join('، '))
@@ -521,20 +521,16 @@
                 let apiUrl = evoSettings.url.endsWith('/') ? evoSettings.url.slice(0, -1) : evoSettings.url;
                 let fullEndpoint = `${apiUrl}/message/sendText/${evoSettings.instance}`;
                 
-                // تجهيز الـ JSON
+                // 2. الهيكل الصحيح المطلوب بناءً على رسالة الخطأ من سيرفرك
                 const payload = {
                     "number": phone,
-                    "textMessage": {
-                        "text": msg
-                    },
-                    "delay": 123,
-                    "linkPreview": true
+                    "text": msg
                 };
 
                 console.log("جاري الإرسال إلى:", fullEndpoint);
                 console.log("البيانات المرسلة:", payload);
 
-                // إرسال الطلب
+                // 3. إرسال الطلب
                 const response = await fetch(fullEndpoint, {
                     method: 'POST',
                     headers: { 
@@ -544,19 +540,15 @@
                     body: JSON.stringify(payload)
                 });
 
-                const responseData = await response.json();
-                console.log("رد السيرفر:", responseData);
-
                 if (!response.ok) {
-                    throw new Error(`خطأ من السيرفر: ${response.status} - ${JSON.stringify(responseData)}`);
+                    const responseData = await response.json();
+                    throw new Error(JSON.stringify(responseData));
                 }
 
-                console.log("تم الإرسال بنجاح!");
+                console.log("تم إرسال رسالة الواتساب بنجاح!");
 
             } catch (e) {
-                console.error("تفاصيل الخطأ:", e);
-                // إظهار الخطأ للعميل/المطور لمعرفة السبب
-                alert("لم يتم إرسال الواتساب. السبب: " + e.message + "\n\nرجاءً افتح الكونسول (F12) لمعرفة التفاصيل.");
+                console.error("خطأ في إرسال الواتساب:", e.message);
             }
         }
     </script>
