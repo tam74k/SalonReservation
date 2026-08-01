@@ -334,7 +334,7 @@
         // ========================================================
         const SUPABASE_URL = 'https://xdusjjrslfslakcovrkf.supabase.co'; // ضع رابطك هنا
         const SUPABASE_ANON_KEY = 'sb_publishable_o2oaEWqE-PJzWjqe6eDq9A_OTwi5Wg6'; // ضع مفتاحك هنا
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        var supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         async function loadSalonSettings() {
             try {
