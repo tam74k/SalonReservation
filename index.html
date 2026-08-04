@@ -4,7 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>صالون ومركز تجميل</title>
+      <!-- استدعاء خط Cairo الأساسي -->
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- استدعاء خط Berkshire Swash لاسم الصالون -->
+    <link href="https://fonts.googleapis.com/css2?family=Berkshire+Swash&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
     <style>
@@ -23,7 +26,13 @@
         .fade-in.visible { opacity: 1; }
         .slide-up { opacity: 0; transform: translateY(30px); transition: all 0.8s ease-out; }
         .slide-up.visible { opacity: 1; transform: translateY(0); }
-
+/* تخصيص خط اسم الصالون باللغة الإنجليزية */
+#dynamic-header-name,
+#dynamic-hero-name,
+#dynamic-footer-name {
+    font-family: 'Berkshire Swash', serif;
+    letter-spacing: 1px; /* مسافة بسيطة بين الحروف لزيادة الفخامة */
+}
         /* تعديلات الهيدر والشعار للظهور في المنتصف وبحجم كبير */
         header { position: absolute; top: 0; left: 0; right: 0; padding: 25px 20px; display: flex; justify-content: center; align-items: center; z-index: 10; width: 100%; }
         .logo-container { 
